@@ -12,16 +12,12 @@ import {
 } from 'firebase/auth';
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-
-// Import the function to create a client-side Supabase client
-// import { createClient } from '@/app/utils/supabase/client';
-
-// UI Components and Icons (no changes here)
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { Dashboard } from '@/components/Dashboard';
-import { SessionTracker } from '@/components/SessionTracker';
+// import { SessionTracker } from '@/components/SessionTracker';
+import { SessionTracker } from '@/components/newSessionTracker';
 import { SessionForm } from '@/components/SessionForm';
 import { SessionLog } from '@/components/SessionLog';
 import { Analytics } from '@/components/Analytics';
@@ -29,7 +25,17 @@ import { Goals } from '@/components/Goals';
 import { ExportData } from '@/components/ExportData';
 import { Auth } from '@/components/Auth';
 import { Home, Clock, BarChart3, Target, Download, LogOut, User as UserIcon } from 'lucide-react';
-// import DashboardPage from '@/components/comp/firebaseData'; // Import the new Analytics component
+
+// zustore import (if needed)
+import { useSessionStore } from '@/store/timerStore';
+// imports from v0
+import TimerCard from '@/components/comp/TimerCard';
+import TodayStatsCard from '@/components/comp/TodayStats';
+import RecentSessions from '@/components/comp/RecentSession';
+import AuthComponent from "@/components/AuthComponent";
+import Link from 'next/link';
+import { useTabSync } from '@/hooks/useTabSync'; // 👈 Import the hook
+import PersistentTimer, { TimerHandle } from '@/lib/PersistentTimer';
 
 // Interfaces (no changes here)
 interface Session {
@@ -66,6 +72,11 @@ interface User {
 // The main App component
 export default function App() {
 
+  // const sessions = useState('sessions'); // useSessionStore((state) => state.sessions)
+  const fetchSessions = useSessionStore((state) => state.startSession); // state.fetchSessions
+  const startSession = useSessionStore((state) => state.startSession);
+  const endSession = useSessionStore((state) => state.endSession);
+
   const router = useRouter();
 
   // State management (mostly the same)
@@ -91,13 +102,21 @@ export default function App() {
     return () => unsubscribe();
   }, []);
 
+  // Fetch data on user login
+useEffect(() => {
+  if (user) {
+    // fetchSessions(user.uid);
+    // fetchGoals(user.uid); // (if you build this into a store)
+  }
+}, [user, fetchSessions]);
+
   // Load data when user is authenticated
-  useEffect(() => {
-    if (user) {
-      loadSessions();
-      loadGoals();
-    }
-  }, [user]);
+  // useEffect(() => {
+  //   if (user) {
+  //     loadSessions();
+  //     loadGoals();
+  //   }
+  // }, [user]);
 
   // Save to local storage when data changes (fallback)
   useEffect(() => {
@@ -180,7 +199,7 @@ export default function App() {
     // No need to refresh, onAuthStateChanged will set user to null
   };
 
-  // --- PASTE YOUR OTHER HANDLER FUNCTIONS HERE ---
+  // --- OTHER HANDLER FUNCTIONS HERE ---
   const loadSessions = async () => {
     if (!user) return;
     try {
@@ -203,24 +222,24 @@ export default function App() {
       } else console.error('Failed to load goals:', response.statusText);
     } catch (error) { console.error('Error loading goals:', error); }
   };
-  const handleSessionEnd = async (sessionData: Session) => {
-    try {
-      if (user) {
-        const headers = await getAuthHeaders();
-        const response = await fetch(`${process.env.NEXT_PUBLIC_SUPABASE_API_BASE}/sessions`, { method: 'POST', headers, body: JSON.stringify(sessionData) });
-        if (response.ok) await loadSessions();
-        else {
-          console.error('Failed to save session to server');
-          setSessions(prev => [...prev, sessionData]);
-        }
-      } else setSessions(prev => [...prev, sessionData]);
-    } catch (error) {
-      console.error('Error saving session:', error);
-      setSessions(prev => [...prev, sessionData]);
-    }
-    setCurrentView('dashboard');
-    setCurrentSessionData(null);
-  };
+  // const handleSessionEnd = async (sessionData: Session) => {
+  //   try {
+  //     if (user) {
+  //       const headers = await getAuthHeaders();
+  //       const response = await fetch(`${process.env.NEXT_PUBLIC_SUPABASE_API_BASE}/sessions`, { method: 'POST', headers, body: JSON.stringify(sessionData) });
+  //       if (response.ok) await loadSessions();
+  //       else {
+  //         console.error('Failed to save session to server');
+  //         setSessions(prev => [...prev, sessionData]);
+  //       }
+  //     } else setSessions(prev => [...prev, sessionData]);
+  //   } catch (error) {
+  //     console.error('Error saving session:', error);
+  //     setSessions(prev => [...prev, sessionData]);
+  //   }
+  //   setCurrentView('dashboard');
+  //   setCurrentSessionData(null);
+  // };
   const handleGoalCreate = async (goalData: Omit<Goal, 'id' | 'createdAt'>) => {
     const goal: Goal = { ...goalData, id: crypto.randomUUID(), createdAt: new Date().toISOString() };
     try {
@@ -292,13 +311,13 @@ export default function App() {
   //   return <Auth onLogin={handleLogin} onSignup={handleSignup} isLoading={authLoading} />;
   // }
 
-  // if (currentView === 'session') {
-  //   return (
-  //     <div className="min-h-screen bg-background">
-  //       <SessionTracker onSessionEnd={handleSessionEnd} sessionActive={true} onSessionStart={() => { }} />
-  //     </div>
-  //   );
-  // }
+  if (currentView === 'session') {
+    return (
+      <div className="min-h-screen bg-background">
+        <SessionTracker onSessionEnd={handleSessionEnd} sessionActive={true} onSessionStart={() => { }} />
+      </div>
+    );
+  }
 
   // if (currentView === 'form') {
   //   return (

@@ -1,148 +1,278 @@
-import React, { useEffect, useState } from 'react';
-import { useAuth } from './contexts/AuthContext';
-import { supabaseUrl } from './utils/supabase/info';
-import { Card } from './ui/card';
-import { Badge } from './ui/badge';
-import { Clock, Coffee, Target, Flame } from 'lucide-react';
+'use Client';
 
-interface TodayAnalytics {
-  totalFocusMs: number;
-  totalBreakMs: number;
-  sessionCount: number;
-  typeBreakdown: Record<string, number>;
-  sessions: any[];
+import { useMemo } from 'react';
+import { Flame } from 'lucide-react';
+import { useShallow } from 'zustand/shallow';
+import { useSessionStore } from '@/store/sessionStore'; // Or your actual path
+import type { Session } from '@/types/typeDeclaration';
+
+// --- Type Definitions for Clarity and Safety ---
+
+// Defines the props for the CircularProgress component
+interface CircularProgressProps {
+    percentage: number;
+    color: string;
+    label: string;
+    time: string;
 }
 
-export function TodayStats() {
-  const { accessToken } = useAuth();
-  const [analytics, setAnalytics] = useState<TodayAnalytics | null>(null);
-  const [loading, setLoading] = useState(true);
+// Defines the props for the TypeBar component
+interface TypeBarProps {
+    type: string;
+    time: string;
+    percentage: number;
+    color: string;
+}
 
-  useEffect(() => {
-    const fetchAnalytics = async () => {
-      if (!accessToken) return;
 
-      try {
-        const response = await fetch(
-          `${supabaseUrl}/functions/v1/make-server-eb7eb3f5/analytics/today`,
-          {
-            headers: {
-              'Authorization': `Bearer ${accessToken}`,
-            },
-          }
-        );
+// --- Helper Function to format time ---
+const formatMilliseconds = (ms: number) => {
+    if (ms <= 0) return "0m";
+    const totalMinutes = Math.floor(ms / 60000);
+    const hours = Math.floor(totalMinutes / 60);
+    const minutes = totalMinutes % 60;
 
-        if (response.ok) {
-          const data = await response.json();
-          setAnalytics(data);
-        }
-      } catch (error) {
-        console.error('Error fetching analytics:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchAnalytics();
-    
-    // Refresh every minute
-    const interval = setInterval(fetchAnalytics, 60000);
-    return () => clearInterval(interval);
-  }, [accessToken]);
-
-  const formatTime = (ms: number) => {
-    const minutes = Math.floor(ms / 60000);
-    const hours = Math.floor(minutes / 60);
-    const remainingMinutes = minutes % 60;
-
+    let result = '';
     if (hours > 0) {
-      return `${hours}h ${remainingMinutes}m`;
+        result += `${hours}h `;
     }
-    return `${minutes}m`;
-  };
+    if (minutes > 0 || hours === 0) {
+        result += `${minutes}m`;
+    }
+    return result.trim();
+};
 
-  if (loading) {
-    return (
-      <Card className="p-6">
-        <div className="space-y-4">
-          <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
-          <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
-          <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
+// --- Helper function to check if a date is today ---
+const isToday = (someDate: string) => {
+    const today = new Date();
+    const date = new Date(someDate);
+    return date.getDate() === today.getDate() &&
+        date.getMonth() === today.getMonth() &&
+        date.getFullYear() === today.getFullYear();
+};
+
+
+// --- NEW: Helper function to calculate the daily streak ---
+const calculateStreak = (sessions: Session[]) => {
+    if (!sessions || sessions.length === 0) {
+        return 0;
+    }
+
+    // Get unique days (normalized to the start of the day) from session history
+    const uniqueDayTimestamps = [...new Set(
+        sessions.map(s => new Date(s.started_at).setHours(0, 0, 0, 0))
+    )];
+
+    // Sort the unique days in descending order (most recent first)
+    uniqueDayTimestamps.sort((a, b) => b - a);
+
+    const today = new Date().setHours(0, 0, 0, 0);
+    const yesterday = new Date(today).setDate(new Date(today).getDate() - 1);
+    const oneDayInMs = 24 * 60 * 60 * 1000;
+
+    const mostRecentSessionDay = uniqueDayTimestamps[0];
+
+    // If the last session was before yesterday, the streak is broken
+    if (mostRecentSessionDay < yesterday) {
+        return 0;
+    }
+
+    let streak = 1;
+    let lastDate = mostRecentSessionDay;
+
+    // Iterate through the rest of the sessions to find consecutive days
+    for (let i = 1; i < uniqueDayTimestamps.length; i++) {
+        const currentDate = uniqueDayTimestamps[i];
+        if (lastDate - currentDate === oneDayInMs) {
+            streak++;
+            lastDate = currentDate;
+        } else {
+            // A gap was found, so the streak ends here
+            break;
+        }
+    }
+
+    return streak;
+};
+
+// --- Sub-Components (respecting your latest version) ---
+const CircularProgress = ({ percentage, color, label, time }: CircularProgressProps) => (
+    <div className="flex flex-col items-center space-y-2">
+        <div className="relative w-24 h-24">
+            <svg className="w-full h-full" viewBox="0 0 100 100">
+                <circle cx="50" cy="50" r="45" className="stroke-current text-gray-700" strokeWidth="10" fill="transparent" />
+                <circle cx="50" cy="50" r="45" className='stroke-current' strokeWidth="10" fill="transparent"
+                    style={{ color: color }}
+                    strokeDasharray="283"
+                    strokeDashoffset={283 - (283 * percentage) / 100}
+                    transform="rotate(-90 50 50)"
+                />
+            </svg>
+            <div className="absolute inset-0 flex flex-col items-center justify-center">
+                <span className="text-white font-bold text-lg">{time}</span>
+            </div>
         </div>
-      </Card>
+        <span className="text-gray-400 text-sm">{label}</span>
+    </div>
+);
+
+const TypeBar = ({ type, time, percentage, color }: TypeBarProps) => (
+    <div className="space-y-1.5">
+        <div className="flex justify-between text-sm">
+            <span className="text-white">{type}</span>
+            <span className="text-gray-400">{time}</span>
+        </div>
+        <div className="w-full bg-gray-700 rounded-full h-2">
+            <div className="bg-[--session-type-color] h-2 rounded-full" style={{
+                width: `${percentage}%`, '--session-type-color': color
+            } as React.CSSProperties
+            }>
+            </div>
+        </div>
+    </div>
+);
+
+// --- Main Component ---
+const TodayStatsCard = () => {
+    // 1. Select ALL state needed for calculation in a single hook.
+    // `shallow` prevents re-renders if the nested data hasn't changed.
+    const {
+        recentSessions,
+        customSessionTypes,
+        sessionActive,
+        sessionStartTime,
+        onBreak,
+        breaks,
+        currentSessionDetails
+    } = useSessionStore(useShallow(
+        (state) => ({
+            recentSessions: state.recentSessions,
+            customSessionTypes: state.customSessionTypes,
+            sessionActive: state.sessionActive,
+            sessionStartTime: state.sessionStartTime,
+            onBreak: state.onBreak,
+            breaks: state.breaks,
+            currentSessionDetails: state.currentSessionDetails,
+        })
+    )
+
     );
-  }
 
-  const focusHours = analytics ? analytics.totalFocusMs / (1000 * 60 * 60) : 0;
-  const dailyGoal = 4; // 4 hours default goal
-  const goalProgress = Math.min((focusHours / dailyGoal) * 100, 100);
+    // 2. Calculate today's stats, now including the LIVE active session
+    const todayStats = useMemo(() => {
+        const todaysCompletedSessions = recentSessions.filter(session => isToday(session.started_at));
 
-  return (
-    <Card className="p-6">
-      <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <h3 className="font-semibold text-gray-900 dark:text-white">Today's Focus</h3>
-          <Badge variant="outline" className="text-xs">
-            {new Date().toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
-          </Badge>
-        </div>
+        let activeSessionFocusMs = 0;
+        let activeSessionBreakMs = 0;
 
-        {/* Main Stats */}
-        <div className="grid grid-cols-2 gap-4">
-          <div className="text-center">
-            <div className="flex items-center justify-center w-12 h-12 bg-purple-100 dark:bg-purple-900/20 rounded-xl mb-2 mx-auto">
-              <Clock className="w-6 h-6 text-purple-600 dark:text-purple-400" />
+        // --- LIVE CALCULATION FOR ACTIVE SESSION ---
+        if (sessionActive && sessionStartTime) {
+            const now = new Date();
+            const startTime = new Date(sessionStartTime);
+
+            const completedBreakTime = breaks
+                .filter(b => b.end)
+                .reduce((acc, b) => acc + (new Date(b.end as Date).getTime() - new Date(b.start).getTime()), 0);
+
+            const currentBreakTime = onBreak && breaks.length > 0 && breaks[breaks.length - 1].start
+                ? now.getTime() - new Date(breaks[breaks.length - 1].start).getTime()
+                : 0;
+
+            activeSessionBreakMs = completedBreakTime + currentBreakTime;
+            const totalElapsed = now.getTime() - startTime.getTime();
+            activeSessionFocusMs = totalElapsed - activeSessionBreakMs;
+        }
+
+        // Combine completed sessions with the live active session
+        const totalFocusMs = todaysCompletedSessions.reduce((acc, session) => acc + session.total_focus_ms, 0) + activeSessionFocusMs;
+        const totalBreakMs = todaysCompletedSessions.reduce((acc, session) => acc + session.total_break_ms, 0) + activeSessionBreakMs;
+        const totalTimeMs = totalFocusMs + totalBreakMs;
+
+        const focusPercentage = totalTimeMs > 0 ? (totalFocusMs / totalTimeMs) * 100 : 0;
+        const breakPercentage = totalTimeMs > 0 ? (totalBreakMs / totalTimeMs) * 100 : 0;
+
+        // Aggregate per-type totals
+        const typeTotalsMap = new Map();
+        todaysCompletedSessions.forEach(session => {
+            const existingTotal = typeTotalsMap.get(session.session_type_id) || 0;
+            typeTotalsMap.set(session.session_type_id, existingTotal + session.total_focus_ms);
+        });
+
+        // Add the live session's focus time to its type
+        if (sessionActive && currentSessionDetails.sessionTypeId) {
+            const existingTotal = typeTotalsMap.get(currentSessionDetails.sessionTypeId) || 0;
+            typeTotalsMap.set(currentSessionDetails.sessionTypeId, existingTotal + activeSessionFocusMs);
+        }
+
+        const perTypeTotals = Array.from(typeTotalsMap.entries()).map(([typeId, totalMs]) => {
+            const typeDetails = customSessionTypes.find(t => t.id === typeId) || { label: 'Unknown', color: 'bg-gray-500' };
+            return {
+                id: typeId,
+                label: typeDetails.label,
+                color: typeDetails.color,
+                timeMs: totalMs,
+                percentage: totalFocusMs > 0 ? (totalMs / totalFocusMs) * 100 : 0,
+            };
+        });
+
+        // --- STREAK LOGIC INTEGRATED ---
+        const streak = calculateStreak(recentSessions);
+
+        return {
+            focusTimeMs: totalFocusMs,
+            breakTimeMs: totalBreakMs,
+            focusPercentage,
+            breakPercentage,
+            perTypeTotals,
+            streak,
+        };
+    }, [recentSessions, customSessionTypes, sessionActive, sessionStartTime, onBreak, breaks, currentSessionDetails]);
+
+    // 3. Render the component with the dynamic data
+    return (
+        <div className="bg-[#1E1E1E] rounded-2xl p-6 shadow-lg border border-white/10">
+            <div className="flex items-center justify-between mb-4">
+                <h2 className="text-white text-lg font-semibold mb-4">Today&apos;s Focus</h2>
+                {todayStats.streak > 0 && (
+                    <div className="flex items-center justify-center bg-[#2a2a2a] p-2 rounded-lg">
+                        <Flame size={18} className="text-orange-400 mr-2" />
+                        <span className="text-white font-medium">{todayStats.streak}-day streak</span>
+                    </div>
+                )}
             </div>
-            <p className="text-2xl font-semibold text-gray-900 dark:text-white">
-              {analytics ? formatTime(analytics.totalFocusMs) : '0m'}
-            </p>
-            <p className="text-sm text-gray-500 dark:text-gray-400">Focus Time</p>
-          </div>
-
-          <div className="text-center">
-            <div className="flex items-center justify-center w-12 h-12 bg-orange-100 dark:bg-orange-900/20 rounded-xl mb-2 mx-auto">
-              <Coffee className="w-6 h-6 text-orange-600 dark:text-orange-400" />
+            <div className="flex justify-around items-center mb-6">
+                <CircularProgress
+                    percentage={todayStats.focusPercentage}
+                    color="#8A2BE2"
+                    label="Focus Time"
+                    time={formatMilliseconds(todayStats.focusTimeMs)}
+                />
+                <CircularProgress
+                    percentage={todayStats.breakPercentage}
+                    color="#4a6bdf"
+                    label="Break Time"
+                    time={formatMilliseconds(todayStats.breakTimeMs)}
+                />
             </div>
-            <p className="text-2xl font-semibold text-gray-900 dark:text-white">
-              {analytics ? formatTime(analytics.totalBreakMs) : '0m'}
-            </p>
-            <p className="text-sm text-gray-500 dark:text-gray-400">Break Time</p>
-          </div>
-        </div>
-
-        {/* Goal Progress */}
-        <div className="space-y-2">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-2">
-              <Target className="w-4 h-4 text-green-600 dark:text-green-400" />
-              <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Daily Goal</span>
+            <h3 className="text-white font-semibold mb-3">Per-Type Totals</h3>
+            <div className="space-y-4 mb-4">
+                {todayStats.perTypeTotals.length > 0 ? (
+                    todayStats.perTypeTotals.sort((a, b) => b.timeMs - a.timeMs).map(type => (
+                        <TypeBar
+                            key={type.id}
+                            type={type.label}
+                            time={formatMilliseconds(type.timeMs)}
+                            percentage={type.percentage}
+                            color={type.color}
+                        />
+                    ))
+                ) : (
+                    <p className="text-gray-500 text-center text-sm">No focus sessions logged today.</p>
+                )}
             </div>
-            <span className="text-sm text-gray-500 dark:text-gray-400">
-              {formatTime((analytics?.totalFocusMs || 0))} / {dailyGoal}h
-            </span>
-          </div>
-          <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
-            <div 
-              className="bg-gradient-to-r from-green-600 to-green-500 h-2 rounded-full transition-all duration-300"
-              style={{ width: `${goalProgress}%` }}
-            />
-          </div>
-          <p className="text-xs text-gray-500 dark:text-gray-400">
-            {Math.round(goalProgress)}% complete
-          </p>
-        </div>
 
-        {/* Session Count */}
-        <div className="flex items-center justify-between pt-4 border-t border-gray-200 dark:border-gray-700">
-          <div className="flex items-center space-x-2">
-            <Flame className="w-4 h-4 text-red-500" />
-            <span className="text-sm text-gray-600 dark:text-gray-300">Sessions Today</span>
-          </div>
-          <Badge variant="secondary">
-            {analytics?.sessionCount || 0}
-          </Badge>
         </div>
-      </div>
-    </Card>
-  );
-}
+    );
+};
+
+export default TodayStatsCard;
