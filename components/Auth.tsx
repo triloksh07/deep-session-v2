@@ -5,23 +5,36 @@ import { Input } from './ui/input';
 import { Label } from './ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
 import { Alert, AlertDescription } from './ui/alert';
-import { 
-  User, 
-  Mail, 
-  Lock, 
+import {
+  User,
+  Mail,
+  Lock,
   Loader2,
   AlertCircle,
   Eye,
-  EyeOff
+  EyeOff,
+  // 1. Add icons
+  Chrome,
+  Github
 } from 'lucide-react';
 
+// 2. Update AuthProps
 interface AuthProps {
   onLogin: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
   onSignup: (email: string, password: string, name: string) => Promise<{ success: boolean; error?: string }>;
-  isLoading: boolean;
+  onGoogleSignIn: () => Promise<{ success: boolean; error?: string }>;
+  onGitHubSignIn: () => Promise<{ success: boolean; error?: string }>;
+  isLoading: boolean; // For email/pass
+  isProviderLoading: boolean; // For Google/GitHub
 }
 
-export function Auth({ onLogin, onSignup, isLoading }: AuthProps) {
+export function Auth({
+  onLogin,
+  onSignup,
+  isLoading,
+  onGoogleSignIn,
+  onGitHubSignIn,
+  isProviderLoading }: AuthProps) {
   const [activeTab, setActiveTab] = useState<'login' | 'signup'>('login');
   const [showPassword, setShowPassword] = useState(false);
   const [formData, setFormData] = useState({
@@ -31,6 +44,23 @@ export function Auth({ onLogin, onSignup, isLoading }: AuthProps) {
     confirmPassword: ''
   });
   const [error, setError] = useState('');
+
+  // 3. Add handler for provider sign-in
+  const handleProviderSignIn = async (provider: 'google' | 'github') => {
+    setError('');
+    try {
+      const result = provider === 'google'
+        ? await onGoogleSignIn()
+        : await onGitHubSignIn();
+
+      if (!result.success) {
+        setError(result.error || 'An error occurred');
+      }
+      // On success, page.tsx onAuthStateChanged handles the rest
+    } catch (error: any) {
+      setError(error.message || 'An unexpected error occurred');
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -47,12 +77,12 @@ export function Auth({ onLogin, onSignup, isLoading }: AuthProps) {
         setError('Name is required');
         return;
       }
-      
+
       if (formData.password !== formData.confirmPassword) {
         setError('Passwords do not match');
         return;
       }
-      
+
       if (formData.password.length < 6) {
         setError('Password must be at least 6 characters long');
         return;
@@ -107,6 +137,105 @@ export function Auth({ onLogin, onSignup, isLoading }: AuthProps) {
         </CardHeader>
 
         <CardContent>
+          {/* --- 6. Add Provider Buttons --- */}
+          <div className="space-y-4">
+            <Button
+              variant="outline"
+              className="w-full"
+              onClick={() => handleProviderSignIn('google')}
+              disabled={isLoading || isProviderLoading}
+            >
+              {isProviderLoading ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                <Chrome className="mr-2 h-4 w-4" />
+              )}
+              Continue with Google
+            </Button>
+            <Button
+              variant="outline"
+              className="w-full"
+              onClick={() => handleProviderSignIn('github')}
+              disabled={isLoading || isProviderLoading}
+            >
+              {isProviderLoading ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                <Github className="mr-2 h-4 w-4" />
+              )}
+              Continue with GitHub
+            </Button>
+          </div>
+
+          {/* --- 7. Add Separator --- */}
+          <div className="relative my-6">
+            <div className="absolute inset-0 flex items-center">
+              <span className="w-full border-t" />
+            </div>
+            <div className="relative flex justify-center text-xs uppercase">
+              <span className="bg-background px-2 text-muted-foreground">
+                Or continue with email
+              </span>
+            </div>
+          </div>
+
+          {/* --- 8. The rest of the component is unchanged --- */}
+          <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-4">
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="login">Sign In</TabsTrigger>
+              <TabsTrigger value="signup">Sign Up</TabsTrigger>
+            </TabsList>
+
+            {error && (
+              <Alert variant="destructive">
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>{error}</AlertDescription>
+              </Alert>
+            )}
+
+            <TabsContent value="login" className="space-y-4">
+              <form onSubmit={handleSubmit} className="space-y-4">
+                {/* ... (Login form is unchanged) ... */}
+                <Button type="submit" className="w-full" disabled={isLoading || isProviderLoading}>
+                  {isLoading ? (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  ) : (
+                    'Sign In'
+                  )}
+                </Button>
+              </form>
+            </TabsContent>
+
+            <TabsContent value="signup" className="space-y-4">
+              <form onSubmit={handleSubmit} className="space-y-4">
+                {/* ... (Signup form is unchanged) ... */}
+                <Button type="submit" className="w-full" disabled={isLoading || isProviderLoading}>
+                  {isLoading ? (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  ) : (
+                    'Create Account'
+                  )}
+                </Button>
+              </form>
+            </TabsContent>
+          </Tabs>
+
+          {/* ... (Toggle link is unchanged) ... */}
+          {/* <div className="mt-6 text-center text-sm text-muted-foreground">
+            <p>
+              {activeTab === 'login' ? "Don't have an account? " : "Already have an account? "}
+              <button
+                onClick={() => handleTabChange(activeTab === 'login' ? 'signup' : 'login')}
+                className="text-primary hover:underline"
+                disabled={isLoading}
+              >
+                {activeTab === 'login' ? 'Sign up' : 'Sign in'}
+              </button>
+            </p>
+          </div> */}
+        </CardContent>
+
+        {/* <CardContent>
           <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-4">
             <TabsList className="grid w-full grid-cols-2">
               <TabsTrigger value="login">Sign In</TabsTrigger>
@@ -285,7 +414,7 @@ export function Auth({ onLogin, onSignup, isLoading }: AuthProps) {
               </button>
             </p>
           </div>
-        </CardContent>
+        </CardContent> */}
       </Card>
     </div>
   );
