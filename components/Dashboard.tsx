@@ -5,6 +5,7 @@ import { Badge } from './ui/badge';
 import { Play, Clock, Target, TrendingUp } from 'lucide-react';
 import { Session } from '@/types'; // <-- 1. IMPORT THE TYPE
 import { FormatCalculatedDuration } from '@/lib/timeUtils';
+import { AiSuggestion } from './ai-suggestion';
 
 interface DashboardProps {
   sessions: Session[];
@@ -127,7 +128,7 @@ export function Dashboard({ sessions, onStartSession }: DashboardProps) {
         {Object.keys(typeBreakdown).length > 0 && (
           <Card>
             <CardHeader>
-              <CardTitle>Today's Activity</CardTitle>
+              <CardTitle>Today&apos;s Activity</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="flex flex-wrap gap-2">
@@ -155,6 +156,7 @@ export function Dashboard({ sessions, onStartSession }: DashboardProps) {
               <CardTitle>Recent Sessions</CardTitle>
             </CardHeader>
             <CardContent>
+              {/* <AiSuggestion sessions={sessions} /> */}
               <div className="space-y-3">
                 {recentSessions.map((session) => (
                   <div key={session.id} className="flex items-center justify-between p-3 border rounded-lg">
@@ -173,6 +175,15 @@ export function Dashboard({ sessions, onStartSession }: DashboardProps) {
             </CardContent>
           </Card>
         )}
+        <Card>
+          <CardHeader>
+            <CardTitle>A Insights</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <AiSuggestion sessions={sessions} />
+
+          </CardContent>
+        </Card>
       </div>
       {sessions.length === 0 && (
         <Card>
