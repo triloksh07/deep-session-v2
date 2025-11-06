@@ -12,14 +12,15 @@ import { auth } from '@/lib/firebase'; // For v0 adapter
 
 // --- ADD ---
 // Import the new mutation hooks
-import { 
-  useToggleBreakMutation, 
-  useEndSessionMutation 
-} from '@/hooks/useTimerMutations';
+// import { 
+//   useToggleBreakMutation, 
+//   useEndSessionMutation 
+// } from '@/hooks/useTimerMutations';
+import { useCreateSession } from '@/hooks/useCreateSession'; // <-- This saves the FINAL log
 
 export function SessionTracker() {
   // 1. Get real-time state from the Zustand store
-  const { isActive, isOnBreak, title, type, sessionStartTime, breaks } = useSessionStore(
+  const { isActive, isOnBreak, title, type, notes, sessionStartTime, breaks, toggleBreak, clearActiveSession } = useSessionStore(
     useShallow((state) => ({
       isActive: state.isActive,
       isOnBreak: state.onBreak,
@@ -28,12 +29,15 @@ export function SessionTracker() {
       notes: state.notes,
       sessionStartTime: state.sessionStartTime,
       breaks: state.breaks,
+      toggleBreak: state.toggleBreak,
+      clearActiveSession: state.clearActiveSession,
     }))
   );
 
   // 2. Instantiate the mutations
-  const toggleBreakMutation = useToggleBreakMutation();
-  const endSessionMutation = useEndSessionMutation();
+  // const toggleBreakMutation = useToggleBreakMutation();
+  // const endSessionMutation = useEndSessionMutation();
+  const createSessionMutation = useCreateSession();
 
   // 3. Setup the timer engine
   const timerEngineRef = useRef<TimerHandle>(null);
@@ -61,7 +65,7 @@ export function SessionTracker() {
     const hours = Math.floor(totalSeconds / 3600);
     const minutes = Math.floor((totalSeconds % 3600) / 60);
     const secs = totalSeconds % 60;
-    
+
     if (hours > 0) {
       return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
     }
@@ -69,33 +73,44 @@ export function SessionTracker() {
   };
 
   // 6. --- NEW END SESSION HANDLER ---
-  const handleEndSession = () => {
-    if (!timerEngineRef.current || !sessionStartTime || endSessionMutation.isPending) {
+  const handleEndSession = async () => {
+    if (!timerEngineRef.current || !sessionStartTime || createSessionMutation.isPending) {
       return;
     }
     const user = auth.currentUser;
-    if (!user) return; // Should never happen here
+    if (!user) return;
 
     // 1. Get final times from the engine
     const { sessionTime, breakTime } = timerEngineRef.current.endSession();
     const endTime = new Date().toISOString();
 
-    // 2. Build the v0-compatible data object (our adapter logic)
+    // 2. Build the v0-compatible data object
     const finalV0Data = {
       id: nanoid(),
       userId: user.uid,
       title: title,
       session_type_id: type,
-      // notes: notes || "",
+      notes: notes || "",
       breaks: breaks,
-      started_at: sessionStartTime, // This is the string from the store
+      started_at: sessionStartTime,
       ended_at: endTime,
       total_focus_ms: sessionTime,
       total_break_ms: breakTime,
     };
 
-    // 3. Call the mutation
-    endSessionMutation.mutate(finalV0Data);
+    // 3. Save the final session (this is offline-capable)
+    createSessionMutation.mutateAsync(finalV0Data);
+
+    try {
+      // 4. AFTER saving, clear the active session (also offline-capable)
+      await clearActiveSession();
+      // The `useSyncActiveSession` hook will hear this deletion
+      // and set isActive: false, hiding this component.
+
+    } catch (error) {
+      console.error("Failed to save session:", error);
+      // Show a toast error
+    }
   };
 
   // This component now relies on the sync hook to set isActive to false
@@ -103,7 +118,8 @@ export function SessionTracker() {
     return null;
   }
 
-  const anyLoading = toggleBreakMutation.isPending || endSessionMutation.isPending;
+  // const anyLoading = toggleBreakMutation.isPending || endSessionMutation.isPending;
+  const isLoading = createSessionMutation.isPending; // Only check the save mutation
 
   return (
     <>
@@ -125,7 +141,7 @@ export function SessionTracker() {
               {type || 'Session'}
             </div>
           </CardHeader>
-          
+
           <CardContent className="text-center space-y-6">
             {/* ... (Timer display JSX is unchanged) ... */}
             <div className="space-y-2">
@@ -135,7 +151,7 @@ export function SessionTracker() {
                 </div>
                 <div className="text-muted-foreground">Session Time</div>
               </div>
-              
+
               {displayBreak > 0 && (
                 <div className={`transition-all duration-300 ${isOnBreak ? 'text-foreground' : 'text-muted-foreground'}`}>
                   <div className="text-2xl font-mono tracking-tight">
@@ -148,38 +164,39 @@ export function SessionTracker() {
 
             {/* 7. --- CONNECTED CONTROLS --- */}
             <div className="flex justify-center space-x-4">
-                <Button
-                  onClick={() => toggleBreakMutation.mutate()}
-                  variant="outline"
-                  size="lg"
-                  className={isOnBreak ? 'bg-orange-100 border-orange-300' : ''}
-                  disabled={anyLoading}
-                >
-                  {toggleBreakMutation.isPending ? (
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  ) : (
-                    <Coffee className="mr-2 h-4 w-4" />
-                  )}
-                  {isOnBreak ? 'End Break' : 'Break'}
-                </Button>
-                
-                <Button
-                  onClick={handleEndSession}
-                  variant="destructive"
-                  size="lg"
-                  disabled={anyLoading}
-                >
-                  {endSessionMutation.isPending ? (
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  ) : (
-                    <Square className="mr-2 h-4 w-4" />
-                  )}
-                  {endSessionMutation.isPending ? 'Saving...' : 'End'}
-                </Button>
+              <Button
+                onClick={toggleBreak}
+                variant="outline"
+                size="lg"
+                className={isOnBreak ? 'bg-orange-100 border-orange-300' : ''}
+                disabled={isLoading}
+              >
+                {/* {toggleBreakMutation.isPending ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                  <Coffee className="mr-2 h-4 w-4" />
+                )} */}
+                <Coffee className="mr-2 h-4 w-4" />
+                {isOnBreak ? 'End Break' : 'Break'}
+              </Button>
+
+              <Button
+                onClick={handleEndSession}
+                variant="destructive"
+                size="lg"
+                disabled={isLoading}
+              >
+                {isLoading ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                  <Square className="mr-2 h-4 w-4" />
+                )}
+                {isLoading ? 'Saving...' : 'End'}
+              </Button>
             </div>
 
             <div className="text-center text-muted-foreground">
-              {anyLoading ? 'Syncing...' : (isOnBreak ? 'On Break' : 'In Session')}
+              {isLoading ? 'Syncing...' : (isOnBreak ? 'On Break' : 'In Session')}
             </div>
           </CardContent>
         </Card>
