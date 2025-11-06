@@ -54,8 +54,8 @@ const createSessionOnFirebase = async (sessionData: CreateSessionInput) => {
     breaks: sessionData.breaks,
 
     // Convert numbers/strings back to Firestore Timestamps
-    started_at: Timestamp.fromDate(new Date(sessionData.startTime)),
-    ended_at: Timestamp.fromDate(new Date(sessionData.endTime)),
+    started_at: sessionData.startTime,
+    ended_at: sessionData.endTime,
 
     // Use the v0 field names
     duration: sessionData.sessionTime,

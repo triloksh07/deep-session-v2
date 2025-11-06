@@ -1,7 +1,8 @@
 'use client';
-// components/InstallPWAButton.tsx (or .js)
+// components/InstallPWAButton.tsx // (or .js)
 
 import { useState, useEffect } from 'react';
+import { Button } from './ui/button';
 
 // Define the interface for the event, if you're using TypeScript
 interface BeforeInstallPromptEvent extends Event {
@@ -60,7 +61,7 @@ const InstallPWAButton = () => {
   }
 
   return (
-    <button
+    <Button
       onClick={handleInstallClick}
       style={{
         background: '#4F46E5',
@@ -74,7 +75,7 @@ const InstallPWAButton = () => {
       }}
     >
       Install DeepSession
-    </button>
+    </Button>
   );
 };
 

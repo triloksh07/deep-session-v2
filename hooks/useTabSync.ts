@@ -1,7 +1,7 @@
 // lib/hooks/useTabSync.ts
 
 import { useEffect } from 'react';
-import { useSessionStore } from '@/store/sessionStore';
+import { useSessionStore } from '@/store/oldMainSessionStore';
 
 const STORAGE_KEY = 'deep-session-v0-timer-storage'; // Must match the name in your persist config
 

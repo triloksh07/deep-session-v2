@@ -4,7 +4,7 @@ import { formatTimerDuration } from '@/lib/timeUtils';
 // import { Code, CodeIcon, ChevronDown, Flame, Edit, Copy, Trash2, Sun, Moon, BookOpen, BookOpenIcon, TargetIcon, Brain, DumbbellIcon, CoffeeIcon, PlayIcon, StopCircleIcon } from 'lucide-react';
 import { StopCircleIcon, CoffeeIcon, PlayIcon } from 'lucide-react';
 import { ICON_MAP, IconKey } from '@/config/sessionTypes.config';
-import { useSessionStore, SessionType } from '@/store/sessionStore';
+import { useSessionStore, SessionType } from '@/store/oldMainSessionStore';
 // --- FIX: Import useShallow from the correct path for middleware compatibility ---
 import { useShallow } from 'zustand/react/shallow';
 import { useState, useRef, useEffect } from 'react';

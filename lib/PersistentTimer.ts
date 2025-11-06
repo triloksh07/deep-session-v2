@@ -3,7 +3,7 @@
 'use client';
 
 import { forwardRef, useImperativeHandle, useRef, useEffect } from 'react';
-import { useSessionStore } from '@/store/sessionStore';
+import { useSessionStore } from '@/store/oldMainSessionStore';
 import { useShallow } from 'zustand/react/shallow';
 
 export interface TimerHandle {

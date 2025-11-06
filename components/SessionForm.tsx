@@ -5,6 +5,7 @@ import { Input } from './ui/input';
 import { Label } from './ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { Textarea } from './ui/textarea';
+import { DEFAULT_SESSION_TYPES } from '@/config/sessionTypes.config';
 
 interface SessionFormProps {
   onSubmit: (sessionData: any) => void;
@@ -16,19 +17,20 @@ export function SessionForm({ onSubmit, onCancel }: SessionFormProps) {
   const [type, setType] = useState('');
   const [notes, setNotes] = useState('');
 
-  const sessionTypes = [
-    'Coding',
-    'Learning',
-    'Practice', 
-    'Exercise',
-    'Planning',
-    'Other'
-  ];
+  // --- DELETE THE OLD HARD-CODED LIST ---
+  // const sessionTypes = [
+  //   'Coding',
+  //   'Learning',
+  //   'Practice', 
+  //   'Exercise',
+  //   'Planning',
+  //   'Other'
+  // ];
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!title.trim()) return;
-    
+
     onSubmit({
       title: title.trim(),
       type: type || 'Other',
@@ -42,7 +44,7 @@ export function SessionForm({ onSubmit, onCancel }: SessionFormProps) {
         <CardHeader>
           <CardTitle>Start New Session</CardTitle>
         </CardHeader>
-        
+
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
@@ -58,14 +60,16 @@ export function SessionForm({ onSubmit, onCancel }: SessionFormProps) {
 
             <div className="space-y-2">
               <Label htmlFor="type">Session Type</Label>
+              {/* Update the Select component */}
               <Select value={type} onValueChange={setType}>
                 <SelectTrigger>
                   <SelectValue placeholder="Select session type" />
                 </SelectTrigger>
                 <SelectContent>
-                  {sessionTypes.map((sessionType) => (
-                    <SelectItem key={sessionType} value={sessionType}>
-                      {sessionType}
+                   {/* Map over the config file */}
+                  {DEFAULT_SESSION_TYPES.map((sessionType) => (
+                    <SelectItem key={sessionType.id} value={sessionType.id}>
+                      {sessionType.label} {/* Show the Label, save the ID */}
                     </SelectItem>
                   ))}
                 </SelectContent>

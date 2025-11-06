@@ -3,7 +3,7 @@
 import { useMemo } from 'react';
 import { Flame } from 'lucide-react';
 import { useShallow } from 'zustand/shallow';
-import { useSessionStore } from '@/store/sessionStore'; // Or your actual path
+import { useSessionStore } from '@/store/oldMainSessionStore'; // Or your actual path
 import type { Session } from '@/types/typeDeclaration';
 
 // --- Type Definitions for Clarity and Safety ---

@@ -1,7 +1,7 @@
 'use client';
 import { useState, useMemo } from 'react';
 import { Edit, Copy, Trash2, X } from 'lucide-react';
-import { useSessionStore } from '@/store/sessionStore';
+import { useSessionStore } from '@/store/oldMainSessionStore';
 import { useShallow } from 'zustand/shallow';
 import { formatISOTime, FormatCalculatedDuration } from '@/lib/timeUtils';
 import type { Session } from '@/types/typeDeclaration';

@@ -13,12 +13,11 @@ import {
   AlertCircle,
   Eye,
   EyeOff,
-  // 1. Add icons
-  Chrome,
-  Github
+  Chrome, // Google Icon
+  Github  // GitHub Icon
 } from 'lucide-react';
 
-// 2. Update AuthProps
+// Props to receive all logic from page.tsx
 interface AuthProps {
   onLogin: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
   onSignup: (email: string, password: string, name: string) => Promise<{ success: boolean; error?: string }>;
@@ -31,10 +30,11 @@ interface AuthProps {
 export function Auth({
   onLogin,
   onSignup,
-  isLoading,
   onGoogleSignIn,
   onGitHubSignIn,
-  isProviderLoading }: AuthProps) {
+  isLoading,
+  isProviderLoading
+}: AuthProps) {
   const [activeTab, setActiveTab] = useState<'login' | 'signup'>('login');
   const [showPassword, setShowPassword] = useState(false);
   const [formData, setFormData] = useState({
@@ -45,7 +45,7 @@ export function Auth({
   });
   const [error, setError] = useState('');
 
-  // 3. Add handler for provider sign-in
+  // Handler for Google/GitHub
   const handleProviderSignIn = async (provider: 'google' | 'github') => {
     setError('');
     try {
@@ -56,12 +56,12 @@ export function Auth({
       if (!result.success) {
         setError(result.error || 'An error occurred');
       }
-      // On success, page.tsx onAuthStateChanged handles the rest
     } catch (error: any) {
       setError(error.message || 'An unexpected error occurred');
     }
   };
 
+  // Handler for Email/Password
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
@@ -71,18 +71,15 @@ export function Auth({
       setError('Please fill in all required fields');
       return;
     }
-
     if (activeTab === 'signup') {
       if (!formData.name) {
         setError('Name is required');
         return;
       }
-
       if (formData.password !== formData.confirmPassword) {
         setError('Passwords do not match');
         return;
       }
-
       if (formData.password.length < 6) {
         setError('Password must be at least 6 characters long');
         return;
@@ -96,23 +93,17 @@ export function Auth({
       } else {
         result = await onSignup(formData.email, formData.password, formData.name);
       }
-
       if (!result.success) {
         setError(result.error || 'An error occurred');
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Auth error:', error);
-      setError('An unexpected error occurred');
+      setError(error.message || 'An unexpected error occurred');
     }
   };
 
   const resetForm = () => {
-    setFormData({
-      email: '',
-      password: '',
-      name: '',
-      confirmPassword: ''
-    });
+    setFormData({ email: '', password: '', name: '', confirmPassword: '' });
     setError('');
   };
 
@@ -120,6 +111,8 @@ export function Auth({
     setActiveTab(value as 'login' | 'signup');
     resetForm();
   };
+
+  const anyLoading = isLoading || isProviderLoading;
 
   return (
     <div className="min-h-screen flex items-center justify-center p-6 bg-background">
@@ -137,13 +130,13 @@ export function Auth({
         </CardHeader>
 
         <CardContent>
-          {/* --- 6. Add Provider Buttons --- */}
+          {/* --- Provider Buttons --- */}
           <div className="space-y-4">
             <Button
               variant="outline"
               className="w-full"
               onClick={() => handleProviderSignIn('google')}
-              disabled={isLoading || isProviderLoading}
+              disabled={anyLoading}
             >
               {isProviderLoading ? (
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -156,7 +149,7 @@ export function Auth({
               variant="outline"
               className="w-full"
               onClick={() => handleProviderSignIn('github')}
-              disabled={isLoading || isProviderLoading}
+              disabled={anyLoading}
             >
               {isProviderLoading ? (
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -167,7 +160,7 @@ export function Auth({
             </Button>
           </div>
 
-          {/* --- 7. Add Separator --- */}
+          {/* --- Separator --- */}
           <div className="relative my-6">
             <div className="absolute inset-0 flex items-center">
               <span className="w-full border-t" />
@@ -179,67 +172,11 @@ export function Auth({
             </div>
           </div>
 
-          {/* --- 8. The rest of the component is unchanged --- */}
+          {/* --- Email/Pass Tabs (Your "Old" Code) --- */}
           <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-4">
             <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="login">Sign In</TabsTrigger>
-              <TabsTrigger value="signup">Sign Up</TabsTrigger>
-            </TabsList>
-
-            {error && (
-              <Alert variant="destructive">
-                <AlertCircle className="h-4 w-4" />
-                <AlertDescription>{error}</AlertDescription>
-              </Alert>
-            )}
-
-            <TabsContent value="login" className="space-y-4">
-              <form onSubmit={handleSubmit} className="space-y-4">
-                {/* ... (Login form is unchanged) ... */}
-                <Button type="submit" className="w-full" disabled={isLoading || isProviderLoading}>
-                  {isLoading ? (
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  ) : (
-                    'Sign In'
-                  )}
-                </Button>
-              </form>
-            </TabsContent>
-
-            <TabsContent value="signup" className="space-y-4">
-              <form onSubmit={handleSubmit} className="space-y-4">
-                {/* ... (Signup form is unchanged) ... */}
-                <Button type="submit" className="w-full" disabled={isLoading || isProviderLoading}>
-                  {isLoading ? (
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  ) : (
-                    'Create Account'
-                  )}
-                </Button>
-              </form>
-            </TabsContent>
-          </Tabs>
-
-          {/* ... (Toggle link is unchanged) ... */}
-          {/* <div className="mt-6 text-center text-sm text-muted-foreground">
-            <p>
-              {activeTab === 'login' ? "Don't have an account? " : "Already have an account? "}
-              <button
-                onClick={() => handleTabChange(activeTab === 'login' ? 'signup' : 'login')}
-                className="text-primary hover:underline"
-                disabled={isLoading}
-              >
-                {activeTab === 'login' ? 'Sign up' : 'Sign in'}
-              </button>
-            </p>
-          </div> */}
-        </CardContent>
-
-        {/* <CardContent>
-          <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-4">
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="login">Sign In</TabsTrigger>
-              <TabsTrigger value="signup">Sign Up</TabsTrigger>
+              <TabsTrigger value="login" disabled={anyLoading}>Sign In</TabsTrigger>
+              <TabsTrigger value="signup" disabled={anyLoading}>Sign Up</TabsTrigger>
             </TabsList>
 
             {error && (
@@ -262,7 +199,7 @@ export function Auth({
                       value={formData.email}
                       onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
                       className="pl-10"
-                      disabled={isLoading}
+                      disabled={anyLoading}
                       required
                     />
                   </div>
@@ -279,21 +216,21 @@ export function Auth({
                       value={formData.password}
                       onChange={(e) => setFormData(prev => ({ ...prev, password: e.target.value }))}
                       className="pl-10 pr-10"
-                      disabled={isLoading}
+                      disabled={anyLoading}
                       required
                     />
                     <button
                       type="button"
                       onClick={() => setShowPassword(!showPassword)}
                       className="absolute right-3 top-3 text-muted-foreground hover:text-foreground"
-                      disabled={isLoading}
+                      disabled={anyLoading}
                     >
                       {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                     </button>
                   </div>
                 </div>
 
-                <Button type="submit" className="w-full" disabled={isLoading}>
+                <Button type="submit" className="w-full" disabled={anyLoading}>
                   {isLoading ? (
                     <>
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -319,7 +256,7 @@ export function Auth({
                       value={formData.name}
                       onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
                       className="pl-10"
-                      disabled={isLoading}
+                      disabled={anyLoading}
                       required
                     />
                   </div>
@@ -336,7 +273,7 @@ export function Auth({
                       value={formData.email}
                       onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
                       className="pl-10"
-                      disabled={isLoading}
+                      disabled={anyLoading}
                       required
                     />
                   </div>
@@ -353,7 +290,7 @@ export function Auth({
                       value={formData.password}
                       onChange={(e) => setFormData(prev => ({ ...prev, password: e.target.value }))}
                       className="pl-10 pr-10"
-                      disabled={isLoading}
+                      disabled={anyLoading}
                       required
                       minLength={6}
                     />
@@ -361,7 +298,7 @@ export function Auth({
                       type="button"
                       onClick={() => setShowPassword(!showPassword)}
                       className="absolute right-3 top-3 text-muted-foreground hover:text-foreground"
-                      disabled={isLoading}
+                      disabled={anyLoading}
                     >
                       {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                     </button>
@@ -382,13 +319,13 @@ export function Auth({
                       value={formData.confirmPassword}
                       onChange={(e) => setFormData(prev => ({ ...prev, confirmPassword: e.target.value }))}
                       className="pl-10"
-                      disabled={isLoading}
+                      disabled={anyLoading}
                       required
                     />
                   </div>
                 </div>
 
-                <Button type="submit" className="w-full" disabled={isLoading}>
+                <Button type="submit" className="w-full" disabled={anyLoading}>
                   {isLoading ? (
                     <>
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -408,13 +345,13 @@ export function Auth({
               <button
                 onClick={() => handleTabChange(activeTab === 'login' ? 'signup' : 'login')}
                 className="text-primary hover:underline"
-                disabled={isLoading}
+                disabled={anyLoading}
               >
                 {activeTab === 'login' ? 'Sign up' : 'Sign in'}
               </button>
             </p>
           </div>
-        </CardContent> */}
+        </CardContent>
       </Card>
     </div>
   );

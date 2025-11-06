@@ -1,5 +1,6 @@
 'use client'; // This component uses hooks, so it must be a Client Component
 
+import Image from 'next/image';
 // Firebase imports for data fetching from Firestore
 import { collection, query, where, getDocs, doc, setDoc } from 'firebase/firestore';
 import { db, auth } from '@/lib/firebase';
@@ -9,7 +10,10 @@ import {
   createUserWithEmailAndPassword,
   signOut,
   updateProfile,
-  User as FirebaseUser // Rename to avoid conflict
+  User as FirebaseUser, // Rename to avoid conflict
+  signInWithPopup,
+  GoogleAuthProvider,
+  GithubAuthProvider,
 } from 'firebase/auth';
 
 import React, { useState, useEffect } from 'react';
@@ -39,9 +43,12 @@ import {
 } from 'lucide-react';
 
 // Hooks & Stores
-import { useSessionsQuery } from '@/hooks/useSessionsQuery'; // <-- 1. IMPORT THE NEW HOOK
-import { useSessionStore } from '@/store/timerStore';
+// import { useSessionStore } from '@/store/timerStore';
+import { useSessionStore } from '@/store/sessionStore';
 import { Session, Goal } from '@/types'; // <-- 3. USE THE SHARED TYPES
+import { useSessionsQuery } from '@/hooks/useSessionsQuery'; // <-- 1. IMPORT THE NEW HOOK
+import { useSyncActiveSession } from '@/hooks/useSyncActiveSession'; // --- ADD ---
+import { useStartSessionMutation } from '@/hooks/useTimerMutations'; // --- ADD ---
 
 // --- 2. IMPORT NEW GOAL HOOKS ---
 import { useGoalsQuery } from '@/hooks/useGoalsQuery';
@@ -93,6 +100,10 @@ interface User {
   name?: string;
 }
 
+// --- CREATE THE PROVIDER INSTANCES ---
+const googleProvider = new GoogleAuthProvider();
+const githubProvider = new GithubAuthProvider();
+
 // --- Main App Component ---
 export default function App() {
 
@@ -104,13 +115,21 @@ export default function App() {
   // const router = useRouter();
 
   // State management (mostly the same)
-  const [user, setUser] = useState<FirebaseUser | null>(null);
   // const [sessions, setSessions] = useState<Session[]>([]);
   // const [goals, setGoals] = useState<Goal[]>([]);
-  const [currentView, setCurrentView] = useState<'dashboard' | 'form' | 'session'>('dashboard');
   // const [currentSessionData, setCurrentSessionData] = useState<any>(null);
+  const [user, setUser] = useState<FirebaseUser | null>(null);
+  // const [currentView, setCurrentView] = useState<'dashboard' | 'form' | 'session'>('dashboard');
   const [isLoading, setIsLoading] = useState(true);
   const [authLoading, setAuthLoading] = useState(false);
+  // --- ADD BACK BOTH LOADING STATES ---
+  const [providerLoading, setProviderLoading] = useState(false); // For Google/GitHub
+
+  // --- THIS IS THE FIX ---
+  // We were calling this with user?.uid, which is undefined on first render.
+  // We must ensure this hook only runs *after* the user is set.
+  const [isAuthReady, setIsAuthReady] = useState(false);
+
 
   // NEW: Modern way to handle auth state changes with Firebase
   // --- Auth Listener ---
@@ -118,6 +137,8 @@ export default function App() {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
       if (currentUser) {
         setUser(currentUser);
+        // setIsLoading(false);
+        setIsAuthReady(true); // <-- Set auth ready
       } else {
         setUser(null);
       }
@@ -126,6 +147,20 @@ export default function App() {
     // Cleanup subscription on unmount
     return () => unsubscribe();
   }, []);
+
+  // useEffect(() => {
+  //   const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+  //     setUser(currentUser);
+  //     setIsLoading(false);
+  //     setIsAuthReady(true); // <-- Set auth ready
+  //   });
+  //   return () => unsubscribe();
+  // }, []);
+
+  // --- ADD THIS HOOK ---
+  // This syncs our Zustand store with Firestore in real-time
+  // and handles cross-device updates.
+  useSyncActiveSession(isAuthReady ? user : null);
 
   // Fetch data on user login
   // useEffect(() => {
@@ -220,6 +255,35 @@ export default function App() {
     }
   };
 
+  // --- KEEP PROVIDER HANDLERS ---
+  const updateUserProfile = async (user: FirebaseUser) => {
+    const userRef = doc(db, "users", user.uid);
+    await setDoc(userRef, {
+      uid: user.uid,
+      email: user.email,
+      displayName: user.displayName,
+      photoURL: user.photoURL,
+    }, { merge: true });
+  };
+
+  const handleProviderSignIn = async (provider: 'google' | 'github') => {
+    setProviderLoading(true);
+    const authProvider = provider === 'google' ? googleProvider : githubProvider;
+
+    try {
+      const result = await signInWithPopup(auth, authProvider);
+      await updateUserProfile(result.user);
+      setProviderLoading(false);
+      return { success: true };
+    } catch (error: any) {
+      // ... (error handling)
+      setProviderLoading(false);
+      return { success: false, error: error.message };
+    }
+  };
+
+  const handleGoogleSignIn = () => handleProviderSignIn('google');
+  const handleGitHubSignIn = () => handleProviderSignIn('github');
   const handleLogout = async () => {
     await signOut(auth);
     // No need to refresh, onAuthStateChanged will set user to null
@@ -335,7 +399,16 @@ export default function App() {
 
   if (!user) {
     // This component now works, powered by your new Firebase handlers
-    return <Auth onLogin={handleLogin} onSignup={handleSignup} isLoading={authLoading} />;
+    return (
+      <Auth
+        onLogin={handleLogin}
+        onSignup={handleSignup}
+        onGoogleSignIn={handleGoogleSignIn}
+        onGitHubSignIn={handleGitHubSignIn}
+        isLoading={authLoading}
+        isProviderLoading={providerLoading}
+      />
+    );;
   }
 
   // This logic is for your new Client State store
@@ -378,10 +451,25 @@ export default function App() {
             <p className="text-sm text-muted-foreground">Welcome back, {user.displayName || user.email}</p>
           </div>
           <div className="flex items-center space-x-2">
-            <Badge variant="secondary" className="flex items-center space-x-1">
+            {user.photoURL ? (
+              <Image
+                src={user.photoURL}
+                alt={user.displayName || "User avatar"}
+                className="w-12 h-12 rounded-full"
+                width={50}
+                height={48}
+              />
+            ) : (
+              <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
+                <span className="font-medium text-primary">
+                  {user.displayName?.split(' ').map(n => n[0]).join('') || <UserIcon />}
+                </span>
+              </div>
+            )}
+            {/* <Badge variant="secondary" className="flex items-center space-x-1">
               <UserIcon className="h-3 w-3" />
               <span>{user ? 'Synced' : 'Offline'}</span>
-            </Badge>
+            </Badge> */}
             <Button variant="outline" size="sm" onClick={handleLogout}>
               <LogOut className="h-4 w-4 mr-2" />
               Sign Out
@@ -476,49 +564,85 @@ const DashboardContent = ({ user }: { user: FirebaseUser }) => {
   const [currentView, setCurrentView] = useState<'dashboard' | 'form' | 'session'>('dashboard');
   const startSession = useSessionStore((state) => state.startSession);
   const isSessionActive = useSessionStore((state) => state.isActive);
+  const startSessionMutation = useStartSessionMutation(); // --- ADD ---
+  // This state is *only* for showing the form vs. the dashboard
+  const [showForm, setShowForm] = useState(false);
 
-  // This effect syncs the view if a session is already active (e.g., on page load)
-  // useEffect(() => {
-  //   if (isSessionActive) {
-  //     setCurrentView('session');
-  //   }
-  // }, [isSessionActive]);
+  // --- Effect to Sync View with Session State ---
 
-  // This is the NEW, FIXED effect
+  // This effect syncs the view
   useEffect(() => {
     if (isSessionActive) {
-      // If a session is active, force the view to the tracker
-      setCurrentView('session');
-    } else if (currentView === 'session' && !isSessionActive) {
-      // If we *were* in the session view, but it just ended,
-      // automatically go back to the dashboard.
-      setCurrentView('dashboard');
+      // If a session is active (from any device), show the tracker
+      setShowForm(false);
     }
-  }, [isSessionActive, currentView]); // Add currentView to the dependency array
+  }, [isSessionActive]);
+
+  // This is the NEW, FIXED effect
+  // useEffect(() => {
+  //   if (isSessionActive) {
+  //     // If a session is active, force the view to the tracker
+  //     setCurrentView('session');
+  //   } else if (currentView === 'session' && !isSessionActive) {
+  //     // If we *were* in the session view, but it just ended,
+  //     // automatically go back to the dashboard.
+  //     setCurrentView('dashboard');
+  //   }
+  // }, [isSessionActive, currentView]); // Add currentView to the dependency array
 
   // --- View Handlers ---
+  // const handleStartSessionClick = () => {
+  //   setCurrentView('form');
+  // };
+  // --- View Handlers ---
   const handleStartSessionClick = () => {
-    setCurrentView('form');
+    setShowForm(true); // Just show the form
   };
 
+  // const handleFormSubmit = (sessionData: { title: string; type: string; notes: string }) => {
+  //   startSession(sessionData); // Start the timer store
+  //   setCurrentView('session'); // Switch the view
+  // };
   const handleFormSubmit = (sessionData: { title: string; type: string; notes: string }) => {
-    startSession(sessionData); // Start the timer store
-    setCurrentView('session'); // Switch the view
+    // Use the mutation. This will optimistically update
+    // our Zustand store, which will make 'isSessionActive' true,
+    // which will close the form and show the tracker.
+    startSessionMutation.mutate(sessionData);
+  };
+
+  const handleFormCancel = () => {
+    setShowForm(false);
   };
 
   // --- View Rendering ---
-  if (currentView === 'session') {
+  if (isSessionActive) {
+    // If a session is running, *always* show the tracker
     return <SessionTracker />;
   }
 
-  if (currentView === 'form') {
+  if (showForm) {
+    // If we click "start", show the form
     return (
       <SessionForm
         onSubmit={handleFormSubmit}
-        onCancel={() => setCurrentView('dashboard')}
+        onCancel={handleFormCancel}
       />
     );
   }
+
+  // // --- View Rendering ---
+  // if (currentView === 'session') {
+  //   return <SessionTracker />;
+  // }
+
+  // if (currentView === 'form') {
+  //   return (
+  //     <SessionForm
+  //       onSubmit={handleFormSubmit}
+  //       onCancel={() => setCurrentView('dashboard')}
+  //     />
+  //   );
+  // }
 
   // --- Default View: The Dashboard Tabs ---
   // This component calls the hook once and distributes data

@@ -171,7 +171,7 @@ export function Dashboard({ sessions, onStartSession }: DashboardProps) {
                     <div className="flex-1">
                       <h4 className="font-medium">{session.title}</h4>
                       <p className="text-sm text-muted-foreground">
-                        {formatTime(session.sessionTime)} • {new Date(session.started_at).toLocaleDateString()}
+                        {formatTime(session.sessionTime)} • {new Date(session.startTime).toLocaleDateString()}
                       </p>
                     </div>
                     <Badge className={getTypeColor(session.type)}>
