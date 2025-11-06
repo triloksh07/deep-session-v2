@@ -1,65 +1,46 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { addDoc, collection, Timestamp } from 'firebase/firestore';
 import { db, auth } from '@/lib/firebase';
-import { useSessionStore } from '@/store/timerStore'; // We need this to reset the store on success
 import { Session } from '@/types'; // Our v2 UI type
 import { nanoid } from 'nanoid'; // Let's use nanoid like v0
 
 // This is the data type we'll save to Firestore
-interface SessionData {
-  id: number;
+
+// --- 1. THIS IS THE FIX ---
+// This interface now matches the 'finalV0Data' object
+// that SessionTracker.tsx will create.
+interface FinalV0DataInput {
+  id: string;
   userId: string;
   title: string;
-  type: string;
+  session_type_id: string;
   notes: string;
-  startTime: string; // ISO string
-  endTime: string; // ISO string
-  sessionTime: number; // Final milliseconds
-  breakTime: number; // Final milliseconds
-  breaks: any[]; // The array of break objects
-  date: string; // YYYY-MM-DD
-}
-
-// The data we pass to this function from the UI
-interface CreateSessionInput {
-  title: string;
-  type: string;
-  notes: string;
-  startTime: string; // ISO string from store
-  endTime: string; // ISO string from component
-  sessionTime: number; // ms
-  breakTime: number; // ms
-  breaks: any[];
-  date: string;
+  breaks: any[]; // Or be more specific: Break[]
+  started_at: string;
+  ended_at: string;
+  total_focus_ms: number;
+  total_break_ms: number;
 }
 
 // The async function that does the server work
-const createSessionOnFirebase = async (sessionData: CreateSessionInput) => {
+const createSessionOnFirebase = async (sessionData: FinalV0DataInput) => {
   const user = auth.currentUser;
   if (!user) throw new Error('No authenticated user found');
-
-  // --- 2. THIS IS THE ADAPTER ---
-  // Convert our v2 UI data into the v0 Firebase data model
-  // const dataToSave: SessionData = {
-  //   ...sessionData,
-  //   id: Date.now(), // Simple unique ID based on timestamp // (matches old app/page.tsx logic)
-  //   userId: user.uid,
-  // };
   const dataToSave = {
     id: nanoid(), // Use nanoid for a string ID, just like v0
     userId: user.uid,
     title: sessionData.title,
-    type: sessionData.type,
+    type: sessionData.session_type_id,
     notes: sessionData.notes,
     breaks: sessionData.breaks,
 
     // Convert numbers/strings back to Firestore Timestamps
-    started_at: sessionData.startTime,
-    ended_at: sessionData.endTime,
+    started_at: sessionData.started_at,
+    ended_at: sessionData.ended_at,
 
     // Use the v0 field names
-    duration: sessionData.sessionTime,
-    break_duration: sessionData.breakTime,
+    duration: sessionData.total_focus_ms,
+    break_duration: sessionData.total_break_ms,
   };
 
   const docRef = await addDoc(collection(db, 'sessions'), dataToSave);
@@ -69,26 +50,19 @@ const createSessionOnFirebase = async (sessionData: CreateSessionInput) => {
 // The custom hook that our component will use
 export const useCreateSession = () => {
   const queryClient = useQueryClient();
-  const endSessionOnClient = useSessionStore((state) => state.endSession);
 
   return useMutation({
-    // mutationFn: createSessionOnFirebase,
-    mutationFn: (sessionData: CreateSessionInput) => createSessionOnFirebase(sessionData), // 3. Adjust type
+    mutationFn: createSessionOnFirebase,
 
-    // This is the magic!
     onSuccess: () => {
-      console.log('Session saved to Firebase (v0 format)!');
-
+      console.log('Session saved to Firebase "sessions" collection.');
       // 1. Tell TanStack Query to refetch the session list
       // This will automatically update <SessionLog />
       queryClient.invalidateQueries({ queryKey: ['sessions'] });
-
-      // 2. Reset the client-side timer store
-      endSessionOnClient();
     },
     onError: (error) => {
       // Handle the error (e.g., show a toast notification)
-      console.error('Failed to save session:', error);
+      console.error('Failed to save session (will retry):', error);
       // We don't reset the store here, so the user can try again
     },
   });

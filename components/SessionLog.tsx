@@ -14,6 +14,10 @@ const getSessionTypeInfo = (id: string) => {
   return sessionTypeMap.get(id) || { label: id, color: '#808080' }; // Fallback
 };
 
+const getSessionLabel = (id: string) => {
+  return sessionTypeMap.get(id)?.label || id; // Fallback to showing the id
+};
+
 interface SessionLogProps {
   sessions: Session[];
 }
@@ -121,7 +125,9 @@ export function SessionLog({ sessions }: SessionLogProps) {
                         </div>
                         {/* --- 5. USE THE LABEL IN THE BADGE --- */}
                         <Badge className={getTypeColor(session.type)}>
-                          {typeInfo.label}
+                          {/* getTypeColor(session.type) */}
+                          {/* {typeInfo.label} */}
+                          {getSessionLabel(session.type)}
                         </Badge>
                       </div>
 

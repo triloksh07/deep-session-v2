@@ -48,7 +48,7 @@ import { useSessionStore } from '@/store/sessionStore';
 import { Session, Goal } from '@/types'; // <-- 3. USE THE SHARED TYPES
 import { useSessionsQuery } from '@/hooks/useSessionsQuery'; // <-- 1. IMPORT THE NEW HOOK
 import { useSyncActiveSession } from '@/hooks/useSyncActiveSession'; // --- ADD ---
-import { useStartSessionMutation } from '@/hooks/useTimerMutations'; // --- ADD ---
+// import { useStartSessionMutation } from '@/hooks/useTimerMutations'; // --- ADD ---
 
 // --- 2. IMPORT NEW GOAL HOOKS ---
 import { useGoalsQuery } from '@/hooks/useGoalsQuery';
@@ -561,10 +561,10 @@ export default function App() {
 // --- New Helper Component to Manage Views ---
 const DashboardContent = ({ user }: { user: FirebaseUser }) => {
   // --- Client-side View State ---
-  const [currentView, setCurrentView] = useState<'dashboard' | 'form' | 'session'>('dashboard');
+  // const [currentView, setCurrentView] = useState<'dashboard' | 'form' | 'session'>('dashboard');
   const startSession = useSessionStore((state) => state.startSession);
   const isSessionActive = useSessionStore((state) => state.isActive);
-  const startSessionMutation = useStartSessionMutation(); // --- ADD ---
+  // const startSessionMutation = useStartSessionMutation(); // --- ADD ---
   // This state is *only* for showing the form vs. the dashboard
   const [showForm, setShowForm] = useState(false);
 
@@ -607,7 +607,8 @@ const DashboardContent = ({ user }: { user: FirebaseUser }) => {
     // Use the mutation. This will optimistically update
     // our Zustand store, which will make 'isSessionActive' true,
     // which will close the form and show the tracker.
-    startSessionMutation.mutate(sessionData);
+    // startSessionMutation.mutate(sessionData);
+    startSession(sessionData);
   };
 
   const handleFormCancel = () => {

@@ -7,14 +7,14 @@ import { User } from 'firebase/auth'; // Import User type
 // 1. Accept the User object
 export const useSyncActiveSession = (user: User | null) => {
   const syncState = useSessionStore((state) => state._syncState);
-  
+
   useEffect(() => {
     // 2. Get uid from the object
-    const userId = user?.uid; 
+    const userId = user?.uid;
 
     if (!userId) {
-      syncState({ 
-        isActive: false, 
+      syncState({
+        isActive: false,
         sessionStartTime: null,
         onBreak: false,
         breaks: [],
@@ -25,14 +25,18 @@ export const useSyncActiveSession = (user: User | null) => {
       return;
     }
 
+    // This doc path ('active_sessions/{userId}') is the key
     const docRef = doc(db, 'active_sessions', userId);
 
+    // This listens to both server changes (cross-sync)
+    // AND local offline cache changes.
     const unsubscribe = onSnapshot(docRef, (docSnap) => {
       if (docSnap.exists()) {
         syncState(docSnap.data());
       } else {
-        syncState({ 
-          isActive: false, 
+        // Doc was deleted (session ended), reset the store
+        syncState({
+          isActive: false,
           sessionStartTime: null,
           onBreak: false,
           breaks: [],
@@ -43,7 +47,7 @@ export const useSyncActiveSession = (user: User | null) => {
       }
     });
 
-    return () => unsubscribe();
-    
+    return () => unsubscribe(); // Cleanup
+
   }, [user, syncState]); // 3. Depend on the user object
 };

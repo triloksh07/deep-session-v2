@@ -8,7 +8,13 @@ import { useSessionStore } from '@/store/sessionStore';
 import PersistentTimer, { TimerHandle } from '@/lib/PersistentTimer'; // Using the v0 timer engine
 import { useShallow } from 'zustand/react/shallow';
 import { nanoid } from 'nanoid'; // For v0 adapter
-import { auth } from '@/lib/firebase'; // For v0 adapter
+import { auth, db } from '@/lib/firebase'; // For v0 adapter
+// 2. Import all necessary Firestore functions
+// import {
+//   runTransaction,
+//   doc,
+//   collection
+// } from 'firebase/firestore';
 
 // --- ADD ---
 // Import the new mutation hooks
@@ -20,7 +26,7 @@ import { useCreateSession } from '@/hooks/useCreateSession'; // <-- This saves t
 
 export function SessionTracker() {
   // 1. Get real-time state from the Zustand store
-  const { isActive, isOnBreak, title, type, notes, sessionStartTime, breaks, toggleBreak, clearActiveSession } = useSessionStore(
+  const { isActive, isOnBreak, title, type, notes, sessionStartTime, breaks, toggleBreak, clearActiveSession, } = useSessionStore(
     useShallow((state) => ({
       isActive: state.isActive,
       isOnBreak: state.onBreak,
@@ -39,6 +45,9 @@ export function SessionTracker() {
   // const endSessionMutation = useEndSessionMutation();
   const createSessionMutation = useCreateSession();
 
+  const { isPending: isSaving } = createSessionMutation;
+  // 5. We need a local loading state for the button
+  const [isEnding, setIsEnding] = useState(false);
   // 3. Setup the timer engine
   const timerEngineRef = useRef<TimerHandle>(null);
   const [displaySession, setDisplaySession] = useState(0);
@@ -74,7 +83,7 @@ export function SessionTracker() {
 
   // 6. --- NEW END SESSION HANDLER ---
   const handleEndSession = async () => {
-    if (!timerEngineRef.current || !sessionStartTime || createSessionMutation.isPending) {
+    if (!timerEngineRef.current || !sessionStartTime || isSaving) {
       return;
     }
     const user = auth.currentUser;
@@ -100,16 +109,42 @@ export function SessionTracker() {
 
     // 3. Save the final session (this is offline-capable)
     createSessionMutation.mutateAsync(finalV0Data);
+    // 3. Define our "lock" doc (the active session)
+    // const activeSessionRef = doc(db, 'active_sessions', user.uid);
+    // Define the new session doc
+    // const newSessionRef = doc(collection(db, 'sessions')); // Creates a new ref
+
 
     try {
-      // 4. AFTER saving, clear the active session (also offline-capable)
-      await clearActiveSession();
+       await clearActiveSession();
       // The `useSyncActiveSession` hook will hear this deletion
       // and set isActive: false, hiding this component.
 
+      // --- REMOVED TRANSACTION CODE FOR SIMPLICITY ---
+      // 4. Run the transaction
+      // await runTransaction(db, async (transaction) => {
+      //   // 4a. Read the "lock" doc
+      //   const activeDoc = await transaction.get(activeSessionRef);
+
+      //   if (!activeDoc.exists()) {
+      //     // It's already gone! Another device (or offline sync)
+      //     // already ended this session. We must do nothing.
+      //     console.log("Session already ended by another device. Aborting.");
+      //     return; // Abort the transaction
+      //   }
+
+      //   // 4b. The doc exists, so we are the "winner".
+      //   // Create the new finished session...
+      //   transaction.set(newSessionRef, finalV0Data);
+      //   // ...and delete the active session "lock"
+      //   transaction.delete(activeSessionRef);
+      // });
+
     } catch (error) {
-      console.error("Failed to save session:", error);
-      // Show a toast error
+      // 6. The transaction failed (e.g., network error after retries)
+      console.error("End session transaction failed:", error);
+      // We can show a toast here: "Failed to save, will retry."
+      setIsEnding(false); // Re-enable the button
     }
   };
 
@@ -169,7 +204,7 @@ export function SessionTracker() {
                 variant="outline"
                 size="lg"
                 className={isOnBreak ? 'bg-orange-100 border-orange-300' : ''}
-                disabled={isLoading}
+                disabled={isSaving}
               >
                 {/* {toggleBreakMutation.isPending ? (
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -184,19 +219,19 @@ export function SessionTracker() {
                 onClick={handleEndSession}
                 variant="destructive"
                 size="lg"
-                disabled={isLoading}
+                disabled={isSaving}
               >
-                {isLoading ? (
+                {isSaving ? (
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 ) : (
                   <Square className="mr-2 h-4 w-4" />
                 )}
-                {isLoading ? 'Saving...' : 'End'}
+                {isSaving ? 'Saving...' : 'End'}
               </Button>
             </div>
 
             <div className="text-center text-muted-foreground">
-              {isLoading ? 'Syncing...' : (isOnBreak ? 'On Break' : 'In Session')}
+              {isSaving ? 'Syncing...' : (isOnBreak ? 'On Break' : 'In Session')}
             </div>
           </CardContent>
         </Card>
