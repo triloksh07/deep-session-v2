@@ -1,86 +1,126 @@
 
 -----
 
-# DeepSession - Your Personal Focus Coach
+# DeepSession v2
 
-[](https://opensource.org/licenses/MIT)
+A modern, offline-first web application designed to help you track and analyze your deep work and focus sessions. Built with a robust architecture for real-time, cross-device synchronization.
 
-DeepSession is a modern, AI-powered focus timer and session tracker designed to boost your productivity. Built with Next.js and TypeScript, it provides a seamless experience for managing focus sessions, tracking your work habits, and gaining insights into your productivity patterns.
+This project is the successor to `v0`, migrating from a simple MVP to a scalable, professional-grade application.
 
-## Features
+## ✨ Core Features
 
-  - **Focus Timer:** A robust, persistent timer to track your work and break intervals with precision.
-  - **Session Tracking:** Log every focus session with details like title, notes, and session type.
-  - **Authentication:** Secure sign-in with Google or GitHub, powered by Firebase Authentication.
-  - **Data Persistence:** All your session data is securely stored in Firestore and available across devices.
-  - **Productivity Analytics:** An in-depth analytics page to visualize your focus trends, including daily activity, session types, and peak productivity hours.
-  - **Cross-Tab Syncing:** Your timer and session state are automatically synchronized across all open browser tabs.
-  - **PWA Ready:** Install DeepSession as a Progressive Web App for a native-like experience and offline capabilities.
-  - **Theming:** Switch between light and dark modes to suit your preference.
+  * **Offline-First:** Start, stop, and manage your timer with zero internet connection. All data syncs automatically when you're back online.
+  * **Real-Time Cross-Device Sync:** Start a timer on your desktop and see it ticking live on your phone.
+  * **Robust Session Timer:** The timer survives browser reloads and tab closures, using `v0` timer engine (`PersistentTimer.ts`).
+  * **Secure Authentication:** Sign in with Email/Password, Google, or GitHub.
+  * **Session History & Data Adapter:** A detailed log of all past sessions. The app correctly adapts and displays data from your `v0` database.
+  * **Goal Tracking:** Create, track, and manage your daily, weekly, or monthly focus goals.
+  * **Data Analytics:** Visualize your productivity with charts and graphs.
+  * **Data Export:** Download your session and goal data as JSON or CSV.
 
-## Tech Stack
+-----
 
-  - **Framework:** [Next.js](https://nextjs.org/) (v15) with App Router
-  - **Language:** [TypeScript](https://www.typescriptlang.org/)
-  - **Styling:** [Tailwind CSS](https://tailwindcss.com/) (v4)
-  - **State Management:** [Zustand](https://zustand-demo.pmnd.rs/)
-  - **Backend & Authentication:** [Firebase](https://firebase.google.com/) (Firestore, Authentication)
-  - **UI Components:** [Shadcn/UI](https://ui.shadcn.com/)
-  - **Icons:** [Lucide React](https://lucide.dev/)
+## 🚀 Architecture & Tech Stack
 
-## Getting Started
+This project uses a modern, scalable architecture designed for a robust user experience by cleanly separating server-side and client-side state.
 
-Follow these instructions to get a local copy up and running for development and testing purposes.
+  * **Framework:** [Next.js](https://nextjs.org/) (with Turbopack)
+  * **UI:** [React](https://react.dev/) & [TypeScript](https://www.typescriptlang.org/)
+  * **Styling:** [Tailwind CSS](https://tailwindcss.com/) & [shadcn/ui](https://ui.shadcn.com/)
+  * **Backend & Database:** [Firebase](https://firebase.google.com/) (Authentication & Firestore)
 
-### Prerequisites
+### State Management
 
-  - Node.js (v18.18.0 or later)
-  - `pnpm` (or your package manager of choice: `npm`, `yarn`)
+This app's state is managed in three distinct layers:
 
-### Installation & Setup
+1.  **Server State (TanStack Query):**
+    All server-side *lists* (e.g., your log of finished sessions, your list of goals) are managed by **[TanStack Query v5](https://tanstack.com/query/latest)**. This gives us powerful caching, request de-duplication, and automatic background refetching.
 
-1.  **Clone the repository:**
+2.  **Live Client State (Zustand):**
+    The *live timer* and its immediate state (`isActive`, `onBreak`, `startTime`) are managed in a global **[Zustand](https://zustand-demo.pmnd.rs/)** store. This provides a fast, optimistic UI that is decoupled from components.
 
-    ```bash
-    git clone https://github.com/triloksh07/deepsession-v0.git
-    cd deepsession-v0
+3.  **Real-time & Offline Sync (Firebase):**
+    We use **Firebase's `onSnapshot` listener** to create a 2-way sync between the `active_sessions/{userId}` document in Firestore and our Zustand store.
+
+      * **Offline-First:** Thanks to `persistentLocalCache`, when you start a session offline, the Zustand action calls `setDoc()`, which writes *instantly* to the local cache. The `onSnapshot` listener hears this local change and updates the UI immediately.
+      * **Cross-Device Sync:** When another device updates the document, `onSnapshot` hears the server change and updates the store, keeping all devices in sync.
+
+-----
+
+## 🏁 Getting Started
+
+### 1\. Environment Variables
+
+Create a `.env.local` file in the root of the project and add your Firebase project configuration:
+
+```env
+NEXT_PUBLIC_API_KEY=...
+NEXT_PUBLIC_AUTH_DOMAIN=...
+NEXT_PUBLIC_PROJECT_ID=...
+NEXT_PUBLIC_STORAGE_BUCKET=...
+NEXT_PUBLIC_MESSAGING_SENDER_ID=...
+NEXT_PUBLIC_APP_ID=...
+NEXT_PUBLIC_MEASUREMENT_ID=...
+```
+
+### 2\. Set Up Firebase
+
+1.  **Enable Authentication:** In your Firebase project, enable the **Email/Password**, **Google**, and **GitHub** sign-in providers.
+2.  **Enable Firestore:** Create a Firestore database.
+3.  **Set Up Security Rules:** You must add rules to allow users to read/write their own data.
+    ```firestore
+    rules_version = '2';
+    service cloud.firestore {
+      match /databases/{database}/documents {
+
+        // Users can only read/write their own profile
+        match /users/{userId} {
+          allow read, write: if request.auth != null && request.auth.uid == userId;
+        }
+
+        // Users can only manage their own finished sessions
+        match /sessions/{sessionId} {
+          allow read, update, delete: if request.auth != null && request.auth.uid == resource.data.userId;
+          allow create: if request.auth != null && request.auth.uid == request.resource.data.userId;
+        }
+        
+        // Users can only manage their own goals
+        match /goals/{goalId} {
+          allow read, update, delete: if request.auth != null && request.auth.uid == resource.data.userId;
+          allow create: if request.auth != null && request.auth.uid == request.resource.data.userId;
+        }
+
+        // Users can only manage their *own* single active session
+        match /active_sessions/{userId} {
+          allow read, write: if request.auth != null && request.auth.uid == userId;
+        }
+      }
+    }
     ```
+4.  **Create Indexes:** You must create composite indexes for your queries to work:
+      * `sessions` collection: `userId` (Ascending), `started_at` (Descending)
+      * `goals` collection: `userId` (Ascending), `createdAt` (Descending)
 
-2.  **Install dependencies:**
+### 3\. Install Dependencies and Run
 
-    ```bash
-    pnpm install
-    ```
+This project uses `pnpm`.
 
-3.  **Set up your environment variables:**
+```bash
+# Install dependencies
+pnpm install
 
-    Create a `.env.local` file in the root of the project and add your Firebase project configuration. You can get this from your Firebase project settings.
+# Run the development server (with Turbopack)
+pnpm dev
+```
 
-    ```
-    NEXT_PUBLIC_API_KEY=your_api_key
-    NEXT_PUBLIC_AUTH_DOMAIN=your_auth_domain
-    NEXT_PUBLIC_PROJECT_ID=your_project_id
-    NEXT_PUBLIC_STORAGE_BUCKET=your_storage_bucket
-    NEXT_PUBLIC_MESSAGING_SENDER_ID=your_messaging_sender_id
-    NEXT_PUBLIC_APP_ID=your_app_id
-    NEXT_PUBLIC_MEASUREMENT_ID=your_measurement_id
-    ```
+*(This command is from your `package.json`)*
 
-4.  **Run the development server:**
+-----
 
-    ```bash
-    pnpm dev
-    ```
+## 🗺️ Future Roadmap
 
-Open [http://localhost:3000](https://www.google.com/search?q=http://localhost:3000) with your browser to see the result.
-
-## Available Scripts
-
-  - `pnpm dev`: Runs the app in development mode with Turbopack.
-  - `pnpm build`: Creates an optimized production build of the app.
-  - `pnpm start`: Starts the production server.
-  - `pnpm lint`: Runs ESLint to check for code quality and style issues.
-
-## License
-
-This project is licensed under the MIT License - see the [LICENSE](./LICENSE) file for details.
+  * [ ] **Toast Notifications:** Add user feedback for actions (e.g., "Session Saved\!", "Error").
+  * [ ] **Picture-in-Picture (PiP):** Add a PiP mode for the timer on desktop.
+  * [ ] **Mobile Notifications:** Implement session controls via the mobile notification panel.
+  * [ ] **UI/Theme Refinement:** Continue to refine the design, themes, and user experience.
+  * [ ] **Data-Adapter Refactor:** Fully move data-adapter logic from hooks into `lib/adapter.ts` to be used by all parts of the app.
