@@ -113,7 +113,7 @@ pnpm install
 pnpm dev
 ```
 
-*(This command is from your `package.json`)*
+*(This command is from `package.json`)*
 
 -----
 
