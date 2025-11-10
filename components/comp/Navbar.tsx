@@ -2,9 +2,9 @@
 import React from 'react';
 // import { useAuth } from './contexts/AuthContext';
 // import { supabaseUrl } from './utils/supabase/info';
-import { Button } from './ui/button';
+import { Button } from '@/components/ui/button';
 import { Timer, Download, User, LogOut, Moon, Sun } from 'lucide-react';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from './ui/dropdown-menu';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@//components/ui/dropdown-menu';
 import { useState, useEffect } from 'react';
 import { ModeToggle } from '@/components/toggle-theme'
 

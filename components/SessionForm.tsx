@@ -6,10 +6,10 @@ import { Label } from './ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { Textarea } from './ui/textarea';
 import { DEFAULT_SESSION_TYPES } from '@/config/sessionTypes.config';
-import { Session } from '@/types/typeDeclaration';
+import { Session } from '@/types';
 
 interface SessionFormProps {
-  onSubmit: (sessionData: any) => void;
+  onSubmit: (sessionData: Partial<Session>) => void;
   onCancel: () => void;
 }
 
@@ -31,12 +31,13 @@ export function SessionForm({ onSubmit, onCancel }: SessionFormProps) {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!title.trim()) return;
-
-    onSubmit({
-      title: title.trim(),
-      type: type || 'Other',
-      notes: notes.trim()
-    });
+    onSubmit(
+      {
+        title: title.trim(),
+        type: type || 'Other',
+        notes: notes.trim()
+      }
+    );
   };
 
   return (

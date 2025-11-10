@@ -56,11 +56,12 @@ export function Auth({
       if (!result.success) {
         setError(result.error || 'An error occurred');
       }
-    } catch (error: any) {
-      setError(error.message || 'An unexpected error occurred');
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : 'Unknown error';
+      setError(message || 'An unexpected error occurred');
     }
   };
-
+ 
   // Handler for Email/Password
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -96,9 +97,10 @@ export function Auth({
       if (!result.success) {
         setError(result.error || 'An error occurred');
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Auth error:', error);
-      setError(error.message || 'An unexpected error occurred');
+      const message = error instanceof Error ? error.message : 'An unexpected error occurred';
+      setError(message);
     }
   };
 

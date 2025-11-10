@@ -56,12 +56,11 @@ import {
   useUpdateGoal,
   useDeleteGoal,
 } from '@/hooks/useGoalMutations';
-
 import { fetchSessions } from '@/hooks/useSessionsQuery';
 import { fetchGoals } from '@/hooks/useGoalsQuery';
-
 import { handleExport } from '@/lib/exportUtils'; // <-- 1. IMPORT NEW HANDLER
 import { useTabSync } from '@/hooks/useTabSync';
+import { toast } from 'sonner';
 // imports from v0
 // import TimerCard from '@/components/comp/TimerCard';
 // import TodayStatsCard from '@/components/comp/TodayStats';
@@ -151,9 +150,10 @@ export default function App() {
       // onAuthStateChanged will handle the user state update
       setAuthLoading(false);
       return { success: true };
-    } catch (error: any) {
+    } catch (error: unknown) {
       setAuthLoading(false);
-      return { success: false, error: error.message };
+      const message = error instanceof Error ? error.message : 'Unknown error';
+      return { success: false, error: message };
     }
   };
 
@@ -177,9 +177,10 @@ export default function App() {
       // onAuthStateChanged will handle the user state
       setAuthLoading(false);
       return { success: true };
-    } catch (error: any) {
+    } catch (error: unknown) {
       setAuthLoading(false);
-      return { success: false, error: error.message };
+      const message = error instanceof Error ? error.message : 'Unknown error';
+      return { success: false, error: message };
     }
   };
 
@@ -203,10 +204,11 @@ export default function App() {
       await updateUserProfile(result.user);
       setProviderLoading(false);
       return { success: true };
-    } catch (error: any) {
+    } catch (error: unknown) {
       // ... (error handling)
       setProviderLoading(false);
-      return { success: false, error: error.message };
+      const message = error instanceof Error ? error.message : 'Unknown error';
+      return { success: false, error: message };
     }
   };
 
@@ -318,12 +320,13 @@ const DashboardContent = ({ user }: { user: FirebaseUser }) => {
     setShowForm(true); // Just show the form
   };
 
-  const handleFormSubmit = (sessionData: { title: string; type: string; notes: string }) => {
+  // { title: string; type: string; notes: string }
+  const handleFormSubmit = (sessionData: Partial<Session>) => {
     // Use the mutation. This will optimistically update
     // our Zustand store, which will make 'isSessionActive' true,
     // which will close the form and show the tracker.
     // startSessionMutation.mutate(sessionData);
-    startSession(sessionData);
+    startSession(sessionData as Session);
   };
 
   const handleFormCancel = () => {

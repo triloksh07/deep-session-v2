@@ -7,11 +7,8 @@ export interface Session {
   notes: string;
   sessionTime: number;
   breakTime: number;
-  // --- THE KEY CHANGE ---
-  // We'll use JS timestamps (numbers) in our UI,
-  // but they will be named after the v0 fields.
-  startTime: number; // JS timestamp (number), NOT a Firestore Timestamp
-  endTime: number; // JS timestamp (number)
+  startTime: number;
+  endTime: number;
 
   date: string;
 }
