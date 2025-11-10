@@ -29,3 +29,9 @@ export interface Goal {
   createdAt: string; // ISO string
   updatedAt?: string; // ISO string (optional)
 }
+
+export interface User {
+  id: string;
+  email: string;
+  name?: string;
+}

@@ -28,18 +28,8 @@ import {
   Zap,
   Award
 } from 'lucide-react';
-
-interface Session {
-  id: number;
-  title: string;
-  type: string;
-  notes: string;
-  sessionTime: number;
-  breakTime: number;
-  startTime: number;
-  endTime: number;
-  date: string;
-}
+import { Session } from '../types/';
+import { FormatCalculatedDuration } from '@/lib/timeUtils'
 
 interface AnalyticsProps {
   sessions: Session[];
@@ -352,7 +342,7 @@ export function Analytics({ sessions }: AnalyticsProps) {
       </div>
 
       {/* Charts Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-1 gap-6">
         {/* Daily Activity Chart */}
         <Card>
           <CardHeader>
@@ -397,7 +387,7 @@ export function Analytics({ sessions }: AnalyticsProps) {
             <CardTitle>Session Types</CardTitle>
           </CardHeader>
           <CardContent>
-            <ResponsiveContainer width="100%" height={300}>
+            <ResponsiveContainer width="100%" height={400}>
               <PieChart>
                 <Pie
                   data={typeData}
@@ -441,7 +431,7 @@ export function Analytics({ sessions }: AnalyticsProps) {
             <CardTitle>Weekly Pattern</CardTitle>
           </CardHeader>
           <CardContent>
-            <ResponsiveContainer width="100%" height={300}>
+            <ResponsiveContainer width="100%" height={400}>
               <BarChart data={weeklyData}>
                 <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
                 <XAxis dataKey="day" fontSize={12} />

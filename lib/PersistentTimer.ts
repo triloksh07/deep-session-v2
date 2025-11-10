@@ -1,9 +1,11 @@
-// lib/PersistentTimer.tsx
+// ----------------- 2. PersistentTimer.tsx (The Engine) -----------------
+// This component is "headless"—it has no UI. Its only job is to keep time.
 
 'use client';
 
 import { forwardRef, useImperativeHandle, useRef, useEffect } from 'react';
-import { useSessionStore } from '@/store/oldMainSessionStore';
+// import { useSessionStore } from '@/store/oldMainSessionStore';
+import { useSessionStore } from '@/store/sessionStore';
 import { useShallow } from 'zustand/react/shallow';
 
 export interface TimerHandle {
@@ -15,10 +17,11 @@ export interface TimerHandle {
 interface PersistentTimerProps {
   isActive: boolean;
   isOnBreak: boolean;
+  onTick: (sessionMs: number, breakMs: number) => void;
 }
 
 const PersistentTimer = forwardRef<TimerHandle, PersistentTimerProps>(
-  ({ isActive, isOnBreak }, ref) => {
+  ({ isActive, isOnBreak, onTick }: PersistentTimerProps, ref) => {
     const sessionElapsed = useRef(0);
     const breakElapsed = useRef(0);
     const lastTimestamp = useRef<number | null>(null);
@@ -34,8 +37,10 @@ const PersistentTimer = forwardRef<TimerHandle, PersistentTimerProps>(
 
     // CRITICAL FIX: This effect now correctly handles rehydration, including active breaks.
     useEffect(() => {
+      // if (!isActive || !sessionStartTime) return;
       if (isActive && sessionStartTime) {
         console.log("Rehydrating timer state...");
+        console.log(`Session Start Time: ${sessionStartTime}`);
 
         // 1. Ensure startTime is a valid number (milliseconds)
         const startTimeMs = new Date(sessionStartTime).getTime();
@@ -70,32 +75,64 @@ const PersistentTimer = forwardRef<TimerHandle, PersistentTimerProps>(
         sessionElapsed.current = totalElapsedSinceStart - breakElapsed.current;
 
         console.log(`Rehydrated with Session: ${sessionElapsed.current}ms, Break: ${breakElapsed.current}ms`);
+        // Synchronously push the rehydrated time to the parent
+        // This happens *before* the first paint.
+        onTick(sessionElapsed.current, breakElapsed.current);
       }
-      // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, []); // Runs only ONCE on mount
 
-    // The core timing loop remains the same efficient logic
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [
+      isActive,
+      sessionStartTime,
+      breaks,
+      isRehydratedOnBreak,
+      onTick
+    ]); // Runs only on Mount
+    // isActive, isOnBreak, sessionStartTime, breaks, isRehydratedOnBreak
+
+    // New Core Timing Loop with requestAnimationFrame
     useEffect(() => {
-      let frameId: number;
+      let frameId: number | null = null;
+      // local flag so tick knows whether it should continue scheduling frames
+      let running = false;
+
       const tick = (now: number) => {
-        if (isActive) {
-          if (lastTimestamp.current !== null) {
-            const delta = now - lastTimestamp.current;
-            if (isOnBreak) {
-              breakElapsed.current += delta;
-            } else {
-              sessionElapsed.current += delta;
-            }
+        if (!running) return; // safety: stop if we've been told to stop
+
+        if (lastTimestamp.current !== null) {
+          const delta = now - lastTimestamp.current;
+          if (isOnBreak) {
+            breakElapsed.current += delta;
+          } else if (isActive) {
+            sessionElapsed.current += delta;
           }
-          lastTimestamp.current = now;
-        } else {
-          lastTimestamp.current = null;
+          // if neither, don't add anywhere
         }
+        lastTimestamp.current = now;
+        // --- PUSH ON EVERY TICK ---
+        // Let the engine push its state to the page
+        onTick(sessionElapsed.current, breakElapsed.current);
         frameId = requestAnimationFrame(tick);
       };
 
-      frameId = requestAnimationFrame(tick);
-      return () => cancelAnimationFrame(frameId);
+      // Start only when needed
+      running = !!(isActive || isOnBreak);
+      if (running) {
+        // preserve lastTimestamp to avoid large jump; initialize if null
+        lastTimestamp.current = lastTimestamp.current ?? performance.now();
+        frameId = requestAnimationFrame(tick);
+      } else {
+        // clear timestamp so resume uses a fresh baseline
+        lastTimestamp.current = null;
+      }
+      return () => {
+        // stop loop and cancel scheduled frame
+        running = false;
+        if (frameId !== null) {
+          cancelAnimationFrame(frameId);
+          frameId = null;
+        }
+      };
     }, [isActive, isOnBreak]);
 
     useImperativeHandle(ref, () => ({

@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { db, auth } from '@/lib/firebase';
 import { doc, setDoc, updateDoc, deleteDoc } from 'firebase/firestore';
+import { persist } from 'zustand/middleware';
 
 export interface Break { start: string; end?: string; }
 export interface SessionInfo { title: string; type: string; notes: string; }
@@ -22,7 +23,7 @@ interface TimerState {
 }
 
 export const useSessionStore = create<TimerState>()(
-    (set, get) => ({
+    persist((set, get) => ({
       // --- INITIAL STATE ---
       title: '', type: '', notes: '',
       sessionStartTime: null, onBreak: false, breaks: [], isActive: false,
@@ -96,5 +97,18 @@ export const useSessionStore = create<TimerState>()(
           console.error("Error clearing active session:", error);
         }
       },
+    }),
+    {
+      // 👇 3. Configure the middleware
+      name: 'deep-session-v2-storage', // The key used in localStorage
+
+      // 👇 4. Use `partialize` to select ONLY what needs to be saved
+      // This prevents saving unnecessary data like `isLoading` or `recentSessions`.
+      partialize: (state) => ({
+        sessionActive: state.isActive,
+        onBreak: state.onBreak,
+        sessionStartTime: state.sessionStartTime,
+        breaks: state.breaks,
+      }),
     })
 );

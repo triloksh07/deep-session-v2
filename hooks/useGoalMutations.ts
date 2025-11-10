@@ -9,6 +9,7 @@ import {
 } from 'firebase/firestore';
 import { db, auth } from '@/lib/firebase';
 import { Goal } from '@/types';
+import { toast } from 'sonner';
 
 // --- Types ---
 // Data needed to create a goal (omit server-managed fields)
@@ -45,9 +46,13 @@ export const useCreateGoal = () => {
     return useMutation({
         mutationFn: createGoalOnFirebase,
         onSuccess: () => {
+            toast.success('Goal created successfully!');
             invalidateGoals(); // Refetch goals list
         },
         onError: (error) => {
+            toast.error('Failed to create goal', {
+                description: error.message || 'Please try again.',
+            });
             console.error('Failed to create goal:', error);
             // You can add a toast notification here
         },
@@ -66,9 +71,11 @@ export const useUpdateGoal = () => {
     return useMutation({
         mutationFn: updateGoalOnFirebase,
         onSuccess: () => {
+            toast.success('Goal updated');
             invalidateGoals(); // Refetch goals list
         },
         onError: (error) => {
+            toast.error('Failed to update goal', { description: error.message });
             console.error('Failed to update goal:', error);
         },
     });
@@ -86,9 +93,11 @@ export const useDeleteGoal = () => {
     return useMutation({
         mutationFn: deleteGoalOnFirebase,
         onSuccess: () => {
+            toast.success('Goal deleted');
             invalidateGoals(); // Refetch goals list
         },
         onError: (error) => {
+            toast.error('Failed to delete goal', { description: error.message });
             console.error('Failed to delete goal:', error);
         },
     });

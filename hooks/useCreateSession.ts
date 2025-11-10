@@ -3,6 +3,7 @@ import { addDoc, collection, Timestamp } from 'firebase/firestore';
 import { db, auth } from '@/lib/firebase';
 import { Session } from '@/types'; // Our v2 UI type
 import { nanoid } from 'nanoid'; // Let's use nanoid like v0
+import { toast } from 'sonner';
 
 // This is the data type we'll save to Firestore
 
@@ -21,26 +22,47 @@ interface FinalV0DataInput {
   total_focus_ms: number;
   total_break_ms: number;
 }
+// --- Query Client Helper ---
+const useSessionQueryClient = () => {
+  const queryClient = useQueryClient();
+  // We only invalidate ['sessions']
+  return () => queryClient.invalidateQueries({ queryKey: ['sessions'] });
+};
 
+// --- Create ---
 // The async function that does the server work
 const createSessionOnFirebase = async (sessionData: FinalV0DataInput) => {
   const user = auth.currentUser;
   if (!user) throw new Error('No authenticated user found');
+
+  // const dataToSave = {
+  //   id: nanoid(), // Use nanoid for a string ID, just like v0
+  //   userId: user.uid,
+  //   title: sessionData.title,
+  //   type: sessionData.session_type_id,
+  //   notes: sessionData.notes,
+  //   breaks: sessionData.breaks,
+
+  //   // Convert numbers/strings back to Firestore Timestamps
+  //   started_at: sessionData.started_at,
+  //   ended_at: sessionData.ended_at,
+
+  //   // Use the v0 field names
+  //   duration: sessionData.total_focus_ms,
+  //   break_duration: sessionData.total_break_ms,
+  // };
+
   const dataToSave = {
-    id: nanoid(), // Use nanoid for a string ID, just like v0
+    id: user.uid, // The internal v0 id
     userId: user.uid,
     title: sessionData.title,
-    type: sessionData.session_type_id,
+    session_type_id: sessionData.session_type_id, // <-- v0 field name
     notes: sessionData.notes,
     breaks: sessionData.breaks,
-
-    // Convert numbers/strings back to Firestore Timestamps
     started_at: sessionData.started_at,
     ended_at: sessionData.ended_at,
-
-    // Use the v0 field names
-    duration: sessionData.total_focus_ms,
-    break_duration: sessionData.total_break_ms,
+    total_focus_ms: sessionData.total_focus_ms,   // <-- v0 field name
+    total_break_ms: sessionData.total_break_ms, // <-- v0 field name
   };
 
   const docRef = await addDoc(collection(db, 'sessions'), dataToSave);
@@ -49,19 +71,22 @@ const createSessionOnFirebase = async (sessionData: FinalV0DataInput) => {
 
 // The custom hook that our component will use
 export const useCreateSession = () => {
-  const queryClient = useQueryClient();
+  // const queryClient = useQueryClient();
+  const invalidateSessions = useSessionQueryClient();
 
   return useMutation({
     mutationFn: createSessionOnFirebase,
 
     onSuccess: () => {
+      toast.success('Session saved');
       console.log('Session saved to Firebase "sessions" collection.');
       // 1. Tell TanStack Query to refetch the session list
       // This will automatically update <SessionLog />
-      queryClient.invalidateQueries({ queryKey: ['sessions'] });
+      // queryClient.invalidateQueries({ queryKey: ['sessions'] });
+      invalidateSessions();
     },
     onError: (error) => {
-      // Handle the error (e.g., show a toast notification)
+      toast.error('Failed to save session', { description: error.message });
       console.error('Failed to save session (will retry):', error);
       // We don't reset the store here, so the user can try again
     },

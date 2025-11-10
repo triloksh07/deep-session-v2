@@ -20,35 +20,15 @@ import {
 } from 'lucide-react';
 import { Session, Goal } from '@/types';
 
-// interface Goal {
-//   id: string;
-//   title: string;
-//   description: string;
-//   type: 'daily' | 'weekly' | 'monthly';
-//   targetValue: number;
-//   targetUnit: 'hours' | 'sessions' | 'minutes';
-//   category: string;
-//   isActive: boolean;
-//   createdAt: string;
-//   updatedAt?: string;
-// }
-
-// interface Session {
-//   id: number;
-//   title: string;
-//   type: string;
-//   sessionTime: number;
-//   breakTime: number;
-//   date: string;
-// }
-
 interface GoalsProps {
   sessions: Session[];
-  onGoalCreate: (goal: Omit<Goal, 'id' | 'createdAt'>) => void;
+  onGoalCreate: (goal: Omit<Goal, 'id' | 'createdAt' | 'userId'>) => void;
   onGoalUpdate: (id: string, goal: Partial<Goal>) => void;
   onGoalDelete: (id: string) => void;
   goals: Goal[];
 }
+
+type CreateGoalInput = Omit<Goal, 'id' | 'createdAt'> & { userId?: string };
 
 export function Goals({ sessions, onGoalCreate, onGoalUpdate, onGoalDelete, goals }: GoalsProps) {
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
@@ -83,12 +63,12 @@ export function Goals({ sessions, onGoalCreate, onGoalUpdate, onGoalDelete, goal
 
     try {
       if (editingGoal) {
-        await onGoalUpdate(editingGoal.id, {
+        onGoalUpdate(editingGoal.id, {
           ...formData,
           updatedAt: new Date().toISOString()
         });
       } else {
-        await onGoalCreate(formData);
+        onGoalCreate(formData);
       }
 
       setIsCreateDialogOpen(false);
@@ -149,10 +129,10 @@ export function Goals({ sessions, onGoalCreate, onGoalUpdate, onGoalDelete, goal
 
     switch (goal.targetUnit) {
       case 'hours':
-        currentValue = relevantSessions.reduce((acc, session) => acc + session.sessionTime, 0) / 3600;
+        currentValue = relevantSessions.reduce((acc, session) => acc + (session.sessionTime / 1000), 0) / 3600;
         break;
       case 'minutes':
-        currentValue = relevantSessions.reduce((acc, session) => acc + session.sessionTime, 0) / 60;
+        currentValue = relevantSessions.reduce((acc, session) => acc + (session.sessionTime / 1000), 0) / 60;
         break;
       case 'sessions':
         currentValue = relevantSessions.length;

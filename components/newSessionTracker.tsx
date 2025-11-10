@@ -1,10 +1,11 @@
 'use client';
 
-import React, { useRef, useEffect, useState } from 'react';
+import React, { useRef, useEffect, useState, useCallback } from 'react';
 import { Button } from './ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Square, Coffee, Loader2 } from 'lucide-react';
 import { useSessionStore } from '@/store/sessionStore';
+// import { useSessionStore } from '@/store/newSessionStore';
 import PersistentTimer, { TimerHandle } from '@/lib/PersistentTimer'; // Using the v0 timer engine
 import { useShallow } from 'zustand/react/shallow';
 import { nanoid } from 'nanoid'; // For v0 adapter
@@ -25,6 +26,7 @@ import { auth, db } from '@/lib/firebase'; // For v0 adapter
 import { useCreateSession } from '@/hooks/useCreateSession'; // <-- This saves the FINAL log
 
 export function SessionTracker() {
+
   // 1. Get real-time state from the Zustand store
   const { isActive, isOnBreak, title, type, notes, sessionStartTime, breaks, toggleBreak, clearActiveSession, } = useSessionStore(
     useShallow((state) => ({
@@ -53,20 +55,44 @@ export function SessionTracker() {
   const [displaySession, setDisplaySession] = useState(0);
   const [displayBreak, setDisplayBreak] = useState(0);
 
+  // This ref gives us access to the timer engine's functions
+  const timerRef = useRef<TimerHandle>(null);
+  // This local state is just for the visual display
+  const [displayTime, setDisplayTime] = useState(0);
+  const [displayBreakTime, setDisplayBreakTime] = useState(0);
+
+  // This effect keeps the visual timer display updated
+  // useEffect(() => {
+  //   let animationFrameId: number;
+  //   const updateDisplay = () => {
+  //     if (isActive && timerRef.current) {
+  //       // Call the new method to get both times
+  //       const { session, break: breakT } = timerRef.current.getCurrentDisplayTimes();
+
+  //       // Update both state variables
+  //       setDisplayTime(session);
+  //       setDisplayBreakTime(breakT);
+  //     }
+  //     animationFrameId = requestAnimationFrame(updateDisplay);
+  //   };
+  //   updateDisplay();
+  //   return () => cancelAnimationFrame(animationFrameId);
+  // }, [isActive]);
+
   // 4. UI tick loop (polls the timer engine)
-  useEffect(() => {
-    let frameId: number;
-    const updateDisplay = () => {
-      if (isActive && timerEngineRef.current) {
-        const { session, break: breakTime } = timerEngineRef.current.getCurrentDisplayTimes();
-        setDisplaySession(session);
-        setDisplayBreak(breakTime);
-      }
-      frameId = requestAnimationFrame(updateDisplay);
-    };
-    frameId = requestAnimationFrame(updateDisplay);
-    return () => cancelAnimationFrame(frameId);
-  }, [isActive]);
+  // useEffect(() => {
+  //   let frameId: number;
+  //   const updateDisplay = () => {
+  //     if (isActive && timerEngineRef.current) {
+  //       const { session, break: breakTime } = timerEngineRef.current.getCurrentDisplayTimes();
+  //       setDisplaySession(session);
+  //       setDisplayBreak(breakTime);
+  //     }
+  //     frameId = requestAnimationFrame(updateDisplay);
+  //   };
+  //   frameId = requestAnimationFrame(updateDisplay);
+  //   return () => cancelAnimationFrame(frameId);
+  // }, [isActive]);
 
   // 5. Format time function (no changes)
   const formatTime = (milliseconds: number) => {
@@ -81,16 +107,22 @@ export function SessionTracker() {
     return `${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
 
+  // A single callback function that the Engine will call
+  const handleTickCallback = useCallback((sessionMs: number, breakMs: number) => {
+    setDisplayTime(sessionMs);
+    setDisplayBreakTime(breakMs);
+  }, []);
+
   // 6. --- NEW END SESSION HANDLER ---
   const handleEndSession = async () => {
-    if (!timerEngineRef.current || !sessionStartTime || isSaving) {
+    if (!timerRef.current || !sessionStartTime || isSaving) {
       return;
     }
     const user = auth.currentUser;
     if (!user) return;
 
     // 1. Get final times from the engine
-    const { sessionTime, breakTime } = timerEngineRef.current.endSession();
+    const { sessionTime, breakTime } = timerRef.current.endSession();
     const endTime = new Date().toISOString();
 
     // 2. Build the v0-compatible data object
@@ -116,7 +148,7 @@ export function SessionTracker() {
 
 
     try {
-       await clearActiveSession();
+      await clearActiveSession();
       // The `useSyncActiveSession` hook will hear this deletion
       // and set isActive: false, hiding this component.
 
@@ -161,9 +193,10 @@ export function SessionTracker() {
       {/* The Headless Timer Engine. It renders null. */}
       {/* It's CRITICAL that isActive and isOnBreak come from the store */}
       <PersistentTimer
-        ref={timerEngineRef}
+        ref={timerRef}
         isActive={isActive}
         isOnBreak={isOnBreak}
+        onTick={handleTickCallback}
       />
 
       <div className="flex flex-col items-center justify-center min-h-screen p-6 bg-background">
@@ -182,15 +215,15 @@ export function SessionTracker() {
             <div className="space-y-2">
               <div className={`transition-all duration-300 ${isOnBreak ? 'text-muted-foreground' : 'text-foreground'}`}>
                 <div className="text-6xl font-mono tracking-tight">
-                  {formatTime(displaySession)}
+                  {formatTime(displayTime)}
                 </div>
                 <div className="text-muted-foreground">Session Time</div>
               </div>
 
-              {displayBreak > 0 && (
+              {displayBreakTime > 0 && (
                 <div className={`transition-all duration-300 ${isOnBreak ? 'text-foreground' : 'text-muted-foreground'}`}>
                   <div className="text-2xl font-mono tracking-tight">
-                    {formatTime(displayBreak)}
+                    {formatTime(displayBreakTime)}
                   </div>
                   <div className="text-muted-foreground">Break Time</div>
                 </div>

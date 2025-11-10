@@ -11,7 +11,7 @@ interface SessionFormProps {
   onSubmit: (sessionData: any) => void;
   onCancel: () => void;
 }
-
+ 
 export function SessionForm({ onSubmit, onCancel }: SessionFormProps) {
   const [title, setTitle] = useState('');
   const [type, setType] = useState('');
@@ -39,7 +39,7 @@ export function SessionForm({ onSubmit, onCancel }: SessionFormProps) {
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen p-6 bg-background">
+    <div className="flex items-center justify-center min-h-screen p-2 bg-background ">
       <Card className="w-full max-w-md">
         <CardHeader>
           <CardTitle>Start New Session</CardTitle>

@@ -4,38 +4,39 @@ import { Button } from './ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { Badge } from './ui/badge';
 import { Checkbox } from './ui/checkbox';
-import { 
-  Download, 
-  FileText, 
-  BarChart3, 
+import {
+  Download,
+  FileText,
+  BarChart3,
   Calendar,
   Clock,
   Loader2
 } from 'lucide-react';
+import { Session, Goal } from '@/types';
 
-interface Session {
-  id: number;
-  title: string;
-  type: string;
-  sessionTime: number;
-  breakTime: number;
-  date: string;
-  notes: string;
-  startTime: number;
-  endTime: number;
-}
+// interface Session {
+//   id: number;
+//   title: string;
+//   type: string;
+//   sessionTime: number;
+//   breakTime: number;
+//   date: string;
+//   notes: string;
+//   startTime: number;
+//   endTime: number;
+// }
 
-interface Goal {
-  id: string;
-  title: string;
-  description: string;
-  type: 'daily' | 'weekly' | 'monthly';
-  targetValue: number;
-  targetUnit: 'hours' | 'sessions' | 'minutes';
-  category: string;
-  isActive: boolean;
-  createdAt: string;
-}
+// interface Goal {
+//   id: string;
+//   title: string;
+//   description: string;
+//   type: 'daily' | 'weekly' | 'monthly';
+//   targetValue: number;
+//   targetUnit: 'hours' | 'sessions' | 'minutes';
+//   category: string;
+//   isActive: boolean;
+//   createdAt: string;
+// }
 
 interface ExportDataProps {
   sessions: Session[];
@@ -64,7 +65,7 @@ export function ExportData({ sessions, goals, onExport }: ExportDataProps) {
   });
 
   const sessionTypes = ['Coding', 'Learning', 'Practice', 'Exercise', 'Planning', 'Other'];
-  
+
   const handleExport = async () => {
     setIsExporting(true);
     try {
@@ -92,7 +93,7 @@ export function ExportData({ sessions, goals, onExport }: ExportDataProps) {
     if (options.dateRange !== 'all') {
       const now = new Date();
       const cutoffDate = new Date();
-      
+
       switch (options.dateRange) {
         case 'week':
           cutoffDate.setDate(now.getDate() - 7);
@@ -104,14 +105,14 @@ export function ExportData({ sessions, goals, onExport }: ExportDataProps) {
           cutoffDate.setDate(now.getDate() - 365);
           break;
       }
-      
-      filtered = filtered.filter(session => 
+
+      filtered = filtered.filter(session =>
         new Date(session.date) >= cutoffDate
       );
     }
 
     // Filter by session types
-    filtered = filtered.filter(session => 
+    filtered = filtered.filter(session =>
       options.sessionTypes.includes(session.type)
     );
 
@@ -119,7 +120,7 @@ export function ExportData({ sessions, goals, onExport }: ExportDataProps) {
   };
 
   const filteredSessions = getFilteredSessions();
-  const totalFocusTime = filteredSessions.reduce((acc, session) => acc + session.sessionTime, 0);
+  const totalFocusTime = filteredSessions.reduce((acc, session) => acc + (session.sessionTime / 1000), 0);
   const totalSessions = filteredSessions.length;
 
   const formatTime = (seconds: number) => {
@@ -136,7 +137,7 @@ export function ExportData({ sessions, goals, onExport }: ExportDataProps) {
       <div>
         <h2 className="text-xl font-medium mb-2">Export Data</h2>
         <p className="text-muted-foreground">
-          Download your FocusFlow data for backup or analysis in external tools.
+          Download your DeepSession data for backup or analysis in external tools.
         </p>
       </div>
 
@@ -160,7 +161,7 @@ export function ExportData({ sessions, goals, onExport }: ExportDataProps) {
                 </SelectContent>
               </Select>
               <p className="text-xs text-muted-foreground">
-                {format === 'json' 
+                {format === 'json'
                   ? 'Complete data export including all details and metadata'
                   : 'Spreadsheet-friendly format with session data only'
                 }
@@ -175,31 +176,31 @@ export function ExportData({ sessions, goals, onExport }: ExportDataProps) {
                   <Checkbox
                     id="sessions"
                     checked={options.includeSessions}
-                    onCheckedChange={(checked) => 
+                    onCheckedChange={(checked) =>
                       setOptions(prev => ({ ...prev, includeSessions: !!checked }))
                     }
                   />
                   <label htmlFor="sessions" className="text-sm">Session History</label>
                 </div>
-                
+
                 {format === 'json' && (
                   <>
                     <div className="flex items-center space-x-2">
                       <Checkbox
                         id="goals"
                         checked={options.includeGoals}
-                        onCheckedChange={(checked) => 
+                        onCheckedChange={(checked) =>
                           setOptions(prev => ({ ...prev, includeGoals: !!checked }))
                         }
                       />
                       <label htmlFor="goals" className="text-sm">Goals & Targets</label>
                     </div>
-                    
+
                     <div className="flex items-center space-x-2">
                       <Checkbox
                         id="analytics"
                         checked={options.includeAnalytics}
-                        onCheckedChange={(checked) => 
+                        onCheckedChange={(checked) =>
                           setOptions(prev => ({ ...prev, includeAnalytics: !!checked }))
                         }
                       />
@@ -213,9 +214,9 @@ export function ExportData({ sessions, goals, onExport }: ExportDataProps) {
             {/* Date Range */}
             <div className="space-y-2">
               <label className="text-sm font-medium">Date Range</label>
-              <Select 
-                value={options.dateRange} 
-                onValueChange={(value: 'all' | 'week' | 'month' | 'year') => 
+              <Select
+                value={options.dateRange}
+                onValueChange={(value: 'all' | 'week' | 'month' | 'year') =>
                   setOptions(prev => ({ ...prev, dateRange: value }))
                 }
               >
@@ -249,7 +250,7 @@ export function ExportData({ sessions, goals, onExport }: ExportDataProps) {
             </div>
 
             {/* Export Button */}
-            <Button 
+            <Button
               onClick={handleExport}
               disabled={isExporting || (!options.includeSessions && !options.includeGoals)}
               className="w-full"
@@ -292,18 +293,18 @@ export function ExportData({ sessions, goals, onExport }: ExportDataProps) {
               <div className="flex items-center space-x-2 text-sm">
                 <Calendar className="h-4 w-4 text-muted-foreground" />
                 <span>
-                  {options.dateRange === 'all' ? 'All sessions' : 
-                   options.dateRange === 'week' ? 'Last 7 days' :
-                   options.dateRange === 'month' ? 'Last 30 days' : 
-                   'Last year'}
+                  {options.dateRange === 'all' ? 'All sessions' :
+                    options.dateRange === 'week' ? 'Last 7 days' :
+                      options.dateRange === 'month' ? 'Last 30 days' :
+                        'Last year'}
                 </span>
               </div>
-              
+
               {filteredSessions.length > 0 && (
                 <div className="flex items-center space-x-2 text-sm text-muted-foreground">
                   <Clock className="h-4 w-4" />
                   <span>
-                    From {new Date(filteredSessions[filteredSessions.length - 1].date).toLocaleDateString()} 
+                    From {new Date(filteredSessions[filteredSessions.length - 1].date).toLocaleDateString()}
                     to {new Date(filteredSessions[0].date).toLocaleDateString()}
                   </span>
                 </div>
@@ -353,7 +354,7 @@ export function ExportData({ sessions, goals, onExport }: ExportDataProps) {
                 <div>Format: {format.toUpperCase()}</div>
                 <div>
                   Estimated size: {
-                    format === 'csv' 
+                    format === 'csv'
                       ? `${Math.ceil(filteredSessions.length * 0.1)}KB`
                       : `${Math.ceil((filteredSessions.length * 0.5 + goals.length * 0.1))}KB`
                   }

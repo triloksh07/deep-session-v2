@@ -1,10 +1,14 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Badge } from './ui/badge';
-import { Clock, Calendar, FileText } from 'lucide-react';
+import { Clock, Calendar, FileText, Edit, Trash2  } from 'lucide-react';
 import { Session } from '@/types'; // <-- 1. IMPORT THE TYPE
 // --- 1. IMPORT THE CONFIG ---
 import { DEFAULT_SESSION_TYPES } from '@/config/sessionTypes.config';
+import { Button } from '@/components/ui/button';
+import { useUpdateSession, useDeleteSession } from '@/hooks/useSessionMutations';
+import { Dialog } from '@/components/ui/dialog';
+
 
 // --- 2. CREATE A MAP FOR EASY LOOKUP ---
 const sessionTypeMap = new Map<string, { label: string, color: string }>(
@@ -23,6 +27,18 @@ interface SessionLogProps {
 }
 
 export function SessionLog({ sessions }: SessionLogProps) {
+
+  const { mutate: updateSession, isPending: isUpdating } = useUpdateSession();
+  const { mutate: deleteSession, isPending: isDeleting } = useDeleteSession();
+
+  const handleSaveEdit = (sessionId: string, newTitle: string) => {
+    updateSession({ id: sessionId, updates: { title: newTitle } });
+  };
+
+  const handleDelete = (sessionId: string) => {
+    deleteSession(sessionId);
+  };
+
   const formatTime = (milliseconds: number) => {
     const totalSeconds = Math.floor(milliseconds / 1000);
     const hours = Math.floor(totalSeconds / 3600);
@@ -117,19 +133,25 @@ export function SessionLog({ sessions }: SessionLogProps) {
                 return (
                   <Card key={`${session.id}-${session.startTime}`} className="transition-shadow hover:shadow-md">
                     <CardContent className="p-4">
+
                       <div className="flex items-start justify-between mb-3">
-                        <div className="flex-1">
-                          <h3 className="font-medium mb-1">{session.title}</h3>
-                          <div className="flex items-center space-x-2 text-muted-foreground">
-                            <span>{formatDateTime(session.startTime)} - {formatDateTime(session.endTime)}</span>
+                        <div className="flex justify-center items-center space-x-3">
+                          <div className="flex-1">
+                            <h3 className="font-medium mb-1">{session.title}</h3>
+                            <div className="flex items-center space-x-2 text-muted-foreground">
+                              <span>{formatDateTime(session.startTime)} - {formatDateTime(session.endTime)}</span>
+                            </div>
                           </div>
+                          {/* --- 5. USE THE LABEL IN THE BADGE --- */}
+                          <Badge className={getTypeColor(session.type)}>
+                            {/* getTypeColor(session.type) */}
+                            {typeInfo.label}
+                            {/* {getSessionLabel(session.type)} */}
+                          </Badge>
                         </div>
-                        {/* --- 5. USE THE LABEL IN THE BADGE --- */}
-                        <Badge className={getTypeColor(session.type)}>
-                          {/* getTypeColor(session.type) */}
-                          {typeInfo.label}
-                          {/* {getSessionLabel(session.type)} */}
-                        </Badge>
+
+                        < Button onClick={() => handleDelete(session.id)} disabled={isDeleting} > <Trash2 className="h-4 w-4" /> </Button>
+                        < Button onClick={() => handleSaveEdit(session.id, 'New Title')} disabled={isUpdating} > <Edit className="h-4 w-4" /> </Button>
                       </div>
 
                       <div className="flex items-center space-x-4 mb-3 text-muted-foreground">

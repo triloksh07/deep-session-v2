@@ -5,7 +5,6 @@ import { Badge } from './ui/badge';
 import { Play, Clock, Target, TrendingUp } from 'lucide-react';
 import { Session } from '@/types'; // <-- 1. IMPORT THE TYPE
 import { FormatCalculatedDuration } from '@/lib/timeUtils';
-import { AiSuggestion } from './ai-suggestion';
 
 interface DashboardProps {
   sessions: Session[];
@@ -81,7 +80,7 @@ export function Dashboard({ sessions, onStartSession }: DashboardProps) {
       </div>
 
       {/* Today's Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Today's Sessions</CardTitle>
@@ -108,7 +107,7 @@ export function Dashboard({ sessions, onStartSession }: DashboardProps) {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className='col-span-2 md:col-span-1'>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">This Week</CardTitle>
             <TrendingUp className="h-4 w-4 text-muted-foreground" />
@@ -156,10 +155,9 @@ export function Dashboard({ sessions, onStartSession }: DashboardProps) {
               <CardTitle>Recent Sessions</CardTitle>
             </CardHeader>
             <CardContent>
-              {/* <AiSuggestion sessions={sessions} /> */}
               <div className="space-y-3">
                 {recentSessions.map((session) => (
-                  <div key={session.id} className="flex items-center justify-between p-3 border rounded-lg">
+                  <div key={`${session.id}-${session.startTime}`} className="flex items-center justify-between p-3 border rounded-lg">
                     <div className="flex-1">
                       <h4 className="font-medium">{session.title}</h4>
                       <p className="text-sm text-muted-foreground">
@@ -175,15 +173,6 @@ export function Dashboard({ sessions, onStartSession }: DashboardProps) {
             </CardContent>
           </Card>
         )}
-        <Card>
-          <CardHeader>
-            <CardTitle>A Insights</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <AiSuggestion sessions={sessions} />
-
-          </CardContent>
-        </Card>
       </div>
       {sessions.length === 0 && (
         <Card>

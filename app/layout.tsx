@@ -1,3 +1,4 @@
+import React from "react";
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
@@ -5,6 +6,8 @@ import Providers from "@/components/providers";
 import { ThemeProvider } from "@/components/theme-provider"
 import AuthProvider from "@/components/AuthProvider";
 import InstallPWAButton from '@/components/InstallPWAButton';
+import { Toaster } from "@/components/ui/sonner";
+import { NetworkStatusHandler } from '@/components/NetworkStatusHandler';
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -43,12 +46,17 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
+        {/* <ThemeProvider> */}
         <Providers>
           {children}
+          <Toaster />
           <div className="fixed bottom-4 right-4 z-50">
-              <InstallPWAButton />
-            </div>
+            <InstallPWAButton />
+          </div>
+          {/* It will run the hook on the client-side */}
+          <NetworkStatusHandler />
         </Providers>
+        {/* </ ThemeProvider> */}
       </body>
     </html>
   );

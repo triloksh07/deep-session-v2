@@ -4,24 +4,7 @@ import { db, auth } from '@/lib/firebase';
 import { Goal } from '@/types'; // Import our new shared type
 
 // The async function that does the server work
-// const fetchGoals = async (userId: string): Promise<Goal[]> => {
-//   const goalsRef = collection(db, 'goals');
-//   const q = query(
-//     goalsRef,
-//     where('userId', '==', userId),
-//     orderBy('createdAt', 'desc')
-//   );
-
-//   const querySnapshot = await getDocs(q);
-
-//   // Map the Firestore documents, ensuring 'id' is included
-//   return querySnapshot.docs.map(doc => ({
-//     ...doc.data(),
-//     id: doc.id, // Assign the document ID to the 'id' field
-//   }) as Goal);
-// };
-
-const fetchGoals = async (userId: string): Promise<Goal[]> => {
+export const fetchGoals = async (userId: string): Promise<Goal[]> => {
   // --- ADD THIS LOG ---
   console.log("useGoalsQuery: Attempting to fetch for userId:", userId);
 
@@ -57,16 +40,15 @@ const fetchGoals = async (userId: string): Promise<Goal[]> => {
 };
 
 // The custom hook that our components will use
-export const useGoalsQuery = (userId: string | undefined) => {
+export const useGoalsQuery = (userId: string | undefined, enabled: boolean) => {
   // const user = auth.currentUser;
 
   return useQuery({
     // The query key: ['goals', 'userId']
     queryKey: ['goals', userId],
-
     queryFn: () => fetchGoals(userId!),
-
     // Only run this query if the user is logged in
-    enabled: !!userId,
+    // enabled: !!userId,
+      enabled: enabled, // <-- PASS THE PROP 
   });
 };
