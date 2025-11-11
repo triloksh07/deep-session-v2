@@ -119,7 +119,7 @@ pnpm dev
 
 ## 🗺️ Future Roadmap
 
-  * [ ] **Toast Notifications:** Add user feedback for actions (e.g., "Session Saved\!", "Error").
+  * [✔️] **Toast Notifications:** Add user feedback for actions (e.g., "Session Saved\!", "Error").
   * [ ] **Picture-in-Picture (PiP):** Add a PiP mode for the timer on desktop.
   * [ ] **Mobile Notifications:** Implement session controls via the mobile notification panel.
   * [ ] **UI/Theme Refinement:** Continue to refine the design, themes, and user experience.
