@@ -28,11 +28,11 @@ export function Navbar() {
   const [isAuthReady, setIsAuthReady] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
-  useEffect(() => {
-    const theme = localStorage.getItem('theme') || 'light';
-    setIsDark(theme === 'dark');
-    document.documentElement.classList.toggle('dark', theme === 'dark');
-  }, []);
+  // useEffect(() => {
+  //   const theme = localStorage.getItem('theme') || 'light';
+  //   setIsDark(theme === 'dark');
+  //   document.documentElement.classList.toggle('dark', theme === 'dark');
+  // }, []);
 
   // NEW: Modern way to handle auth state changes with Firebase
   // --- Auth Listener ---
@@ -51,12 +51,12 @@ export function Navbar() {
     return () => unsubscribe();
   }, []);
 
-  const toggleTheme = () => {
-    const newTheme = isDark ? 'light' : 'dark';
-    setIsDark(!isDark);
-    localStorage.setItem('theme', newTheme);
-    document.documentElement.classList.toggle('dark', newTheme === 'dark');
-  };
+  // const toggleTheme = () => {
+  //   const newTheme = isDark ? 'light' : 'dark';
+  //   setIsDark(!isDark);
+  //   localStorage.setItem('theme', newTheme);
+  //   document.documentElement.classList.toggle('dark', newTheme === 'dark');
+  // };
 
   const handleLogout = async () => {
     await signOut(auth);
@@ -83,10 +83,10 @@ export function Navbar() {
 
           {/* User Menu */}
           <div className="flex items-center space-x-4">
-            <Button variant="ghost" size="sm" onClick={toggleTheme}>
+            {/* <Button variant="ghost" size="sm" onClick={toggleTheme}>
               {isDark ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
-            </Button>
-            {/* <ModeToggle /> */}
+            </Button> */}
+            <ModeToggle />
 
             <Button variant="ghost" size="sm" onClick={() => { }}>
               <Download className="w-4 h-4 mr-2" />

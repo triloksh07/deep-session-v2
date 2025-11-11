@@ -47,18 +47,23 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        {/* <ThemeProvider> */}
-        <Providers>
-          {children}
-          <Toaster />
-          <div className="fixed bottom-4 right-4 z-50">
-            <InstallPWAButton />
-          </div>
-          {/* It will run the hook on the client-side */}
-          <NetworkStatusHandler />
-          <Analytics />
-        </Providers>
-        {/* </ ThemeProvider> */}
+        <ThemeProvider 
+          attribute="class"
+          defaultTheme="system"
+          enableSystem
+          disableTransitionOnChange
+        >
+          <Providers>
+            {children}
+            <Toaster />
+            <div className="fixed bottom-4 right-4 z-50">
+              <InstallPWAButton />
+            </div>
+            {/* It will run the hook on the client-side */}
+            <NetworkStatusHandler />
+            <Analytics />
+          </Providers>
+        </ ThemeProvider>
       </body>
     </html>
   );

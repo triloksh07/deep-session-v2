@@ -1,14 +1,35 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Badge } from './ui/badge';
-import { Clock, Calendar, FileText, Edit, Trash2  } from 'lucide-react';
+import { Clock, Calendar, FileText, Edit, Trash2 } from 'lucide-react';
 import { Session } from '@/types'; // <-- 1. IMPORT THE TYPE
 // --- 1. IMPORT THE CONFIG ---
 import { DEFAULT_SESSION_TYPES } from '@/config/sessionTypes.config';
-import { Button } from '@/components/ui/button';
 import { useUpdateSession, useDeleteSession } from '@/hooks/useSessionMutations';
-import { Dialog } from '@/components/ui/dialog';
-
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { useState } from 'react';
+// ---------------------------------
 
 // --- 2. CREATE A MAP FOR EASY LOOKUP ---
 const sessionTypeMap = new Map<string, { label: string, color: string }>(
@@ -31,11 +52,31 @@ export function SessionLog({ sessions }: SessionLogProps) {
   const { mutate: updateSession, isPending: isUpdating } = useUpdateSession();
   const { mutate: deleteSession, isPending: isDeleting } = useDeleteSession();
 
-  const handleSaveEdit = (sessionId: string, newTitle: string) => {
-    updateSession({ id: sessionId, updates: { title: newTitle } });
+  // --- NEW UI STATE ---
+  // State to track which session is being edited
+  const [editingSession, setEditingSession] = useState<Session | null>(null);
+  // State to hold the new title value in the input
+  const [newTitle, setNewTitle] = useState('');
+  const [sessionId, setSessionId] = useState('');
+  // --------------------
+
+  // --- MODIFIED HANDLER FUNCTIONS ---
+
+  // This function opens the dialog and pre-fills the state
+  const handleEditClick = (session: Session) => {
+    setEditingSession(session);
+    setNewTitle(String(session.title || ''));
   };
 
-  const handleDelete = (sessionId: string) => {
+  const handleSaveEdit = (sessionId: string, newTitle: string) => {
+    if (newTitle.trim() !== "" && editingSession) {
+      updateSession({ id: sessionId, updates: { title: newTitle } });
+    }
+    // Close the dialog
+    setEditingSession(null);
+  };
+
+  const handleDeleteConfirm = (sessionId: string) => {
     deleteSession(sessionId);
   };
 
@@ -132,29 +173,18 @@ export function SessionLog({ sessions }: SessionLogProps) {
                 const typeInfo = getSessionTypeInfo(session.type);
                 return (
                   <Card key={`${session.id}-${session.startTime}`} className="transition-shadow hover:shadow-md">
-                    <CardContent className="p-4">
-
-                      <div className="flex items-start justify-between mb-3">
+                    <CardContent className="p-4 grid grid-cols-2 gap-2">
+                      <div className="col-span-2 flex items-start justify-between mb-3">
                         <div className="flex justify-center items-center space-x-3">
                           <div className="flex-1">
-                            <h3 className="font-medium mb-1">{session.title}</h3>
+                            <h3 className="font-medium mb-1 max--[90%] wrap-normal">{session.title}</h3>
                             <div className="flex items-center space-x-2 text-muted-foreground">
                               <span>{formatDateTime(session.startTime)} - {formatDateTime(session.endTime)}</span>
                             </div>
                           </div>
-                          {/* --- 5. USE THE LABEL IN THE BADGE --- */}
-                          <Badge className={getTypeColor(session.type)}>
-                            {/* getTypeColor(session.type) */}
-                            {typeInfo.label}
-                            {/* {getSessionLabel(session.type)} */}
-                          </Badge>
                         </div>
-
-                        < Button onClick={() => handleDelete(session.id)} disabled={isDeleting} > <Trash2 className="h-4 w-4" /> </Button>
-                        < Button onClick={() => handleSaveEdit(session.id, 'New Title')} disabled={isUpdating} > <Edit className="h-4 w-4" /> </Button>
                       </div>
-
-                      <div className="flex items-center space-x-4 mb-3 text-muted-foreground">
+                      <div className="col-span-2 flex items-center justify-start space-x-4 mb-3 text-muted-foreground">
                         <div className="flex items-center space-x-1">
                           <Clock className="h-4 w-4" />
                           <span>Focus: {formatTime(session.sessionTime)}</span>
@@ -166,13 +196,55 @@ export function SessionLog({ sessions }: SessionLogProps) {
                           </div>
                         )}
                       </div>
-
                       {session.notes && (
-                        <div className="flex items-start space-x-2 text-muted-foreground">
-                          <FileText className="h-4 w-4 mt-0.5 shrink-0" />
+                        <div className="col-span-2 flex items-start space-x-2 text-muted-foreground">
+                          <FileText className="h-4 w-4 mt-0.5 shrink" />
                           <p className="text-sm">{session.notes}</p>
                         </div>
                       )}
+                      <div className="col-span-2 relative flex items-center justify-between mt-4">
+                        <Badge variant="default" className={getTypeColor(typeInfo.label)}>
+                          {/* getTypeColor(session.type) */}
+                          {typeInfo.label}
+                          {/* {getSessionLabel(session.type)} */}
+                        </Badge>
+                        <div className="relaive flex items-center justify-center space-x-2">
+                          {/* --- DELETE BUTTON (opens AlertDialog) --- */}
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button variant="destructive" className="p-1 hover:text-white"><Trash2 size={16} /></Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  This will permanently delete your
+                                  session: <br /> &quot;{session.title || 'Untitled Session'}&quot;.
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                <AlertDialogAction
+                                  onClick={() => handleDeleteConfirm(session.id)}
+                                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                  disabled={isDeleting}
+                                >
+                                  Continue
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
+                          {/* --- EDIT BUTTON (opens Dialog) --- */}
+                          <Button
+                            onClick={() => { handleEditClick(session), setSessionId(session.id) }}
+                            className="p-1 hover:text-primary"
+                            variant="ghost"
+                            disabled={isUpdating}
+                          >
+                            <Edit size={16} />
+                          </Button>
+                        </div>
+                      </div>
                     </CardContent>
                   </Card>
                 );
@@ -180,6 +252,36 @@ export function SessionLog({ sessions }: SessionLogProps) {
           </div>
         </div>
       ))}
+
+      {/* --- EDIT DIALOG (MODAL) --- */}
+      {/* This sits outside the loop and is controlled by the 'editingSession' state */}
+      <Dialog open={!!editingSession} onOpenChange={(isOpen) => !isOpen && setEditingSession(null)}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Edit session title</DialogTitle>
+            <DialogDescription>
+              Make changes to your session title here. Click save when you&apos;re done.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="title" className="text-right">
+                Title
+              </Label>
+              <Input
+                id="title"
+                value={newTitle}
+                onChange={(e) => setNewTitle(e.target.value)}
+                className="col-span-3"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditingSession(null)}>Cancel</Button>
+            <Button onClick={() => handleSaveEdit(sessionId, newTitle)}>Save changes</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
