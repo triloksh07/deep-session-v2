@@ -8,6 +8,7 @@ import AuthProvider from "@/components/AuthProvider";
 import InstallPWAButton from '@/components/InstallPWAButton';
 import { Toaster } from "@/components/ui/sonner";
 import { NetworkStatusHandler } from '@/components/NetworkStatusHandler';
+import { Analytics } from '@vercel/analytics/next';
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -55,6 +56,7 @@ export default function RootLayout({
           </div>
           {/* It will run the hook on the client-side */}
           <NetworkStatusHandler />
+          <Analytics />
         </Providers>
         {/* </ ThemeProvider> */}
       </body>
