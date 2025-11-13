@@ -22,9 +22,11 @@ import { nanoid } from 'nanoid';
 
 function EditableTitle({ value, onChange, disabled = false }: EditableProps) {
     const [isEditing, setIsEditing] = useState(false);
+    // 1. Fast, local state for the input
     const [currentValue, setCurrentValue] = useState(value);
     const inputRef = useRef<HTMLInputElement>(null);
-    // const debouncedValue = useDebounce(currentValue, 500); // 500ms delay
+    // 2. Debounced version of the local state
+    const debouncedValue = useDebounce(currentValue, 500); // 500ms delay
 
     // Sync local state with prop value if it changes externally
     useEffect(() => {
@@ -38,9 +40,17 @@ function EditableTitle({ value, onChange, disabled = false }: EditableProps) {
         }
     }, [isEditing]);
 
+    // 3. EFFECT: Save to global store *only when debounced value changes*
+    useEffect(() => {
+        // Only call onChange if the debounced value is different from the original prop
+        if (debouncedValue !== value) {
+            onChange(debouncedValue); // This calls updateSessionDetails
+        }
+    }, [debouncedValue, value, onChange]);
+
     const handleBlur = () => {
         setIsEditing(false);
-        // Only call onChange if the value actually changed
+        // Only call onChange if the value actually changed or is not empty & Save immediately on blur
         if (currentValue.trim() !== value.trim() && currentValue.trim() !== '') {
             onChange(currentValue.trim());
         } else {
