@@ -34,27 +34,51 @@ function EditableTitle({ value, onChange, disabled = false }: EditableProps) {
     // 2. Debounced version of the local state
     // --- FIX FOR RACE CONDITION ---
     // Get the debounced value AND the cancel function from the hook
-    // const [debouncedValue, cancelDebounce] = useDebounce(currentValue, 500); // 500ms delay
-    const debouncedValue = useDebounce(currentValue, 500); // 500ms delay
+    const [debouncedValue, cancelDebounce] = useDebounce(currentValue, 500); // 500ms delay
+    // const debouncedValue = useDebounce(currentValue, 500); // 500ms delay
 
     // Sync local state with prop value if it changes externally
-    useEffect(() => {
-        setCurrentValue(value);
-    }, [value]);
-
-    // Sync external prop changes (from Firestore) to our local state
     // useEffect(() => {
-    //     // Mark that we are syncing, so the auto-save effect doesn't fire
-    //     isSyncingRef.current = true;
     //     setCurrentValue(value);
     // }, [value]);
+
+    // Sync external prop changes (from Firestore) to our local state
+    useEffect(() => {
+        // Mark that we are syncing, so the auto-save effect doesn't fire
+        isSyncingRef.current = true;
+        setCurrentValue(value);
+    }, [value]);
 
     useEffect(() => {
         if (isEditing && inputRef.current) {
             inputRef.current.focus();
             inputRef.current.select();
         }
-    }, [isEditing]);
+    }, [isEditing])
+
+    // Auto-save effect (watches the debounced value)
+    useEffect(() => {
+        // --- FIX FOR INFINITE LOOP ---
+        // If we are just syncing a prop change, do NOT save.
+        if (isSyncingRef.current) {
+            isSyncingRef.current = false; // Reset the flag
+            return;
+        }
+
+        // Only save if the value is different from the "saved" prop value
+        if (debouncedValue !== value) {
+            onChange(debouncedValue); // This calls updateSessionDetails
+        }
+    }, [debouncedValue, value, onChange]);
+
+    // --- FIX FOR RACE CONDITION ---
+    // This effect will run when the component is unmounted (e.g., session ends)
+    useEffect(() => {
+        return () => {
+            // Cancel any pending debounced save
+            cancelDebounce();
+        };
+    }, [cancelDebounce]);
 
     // 3. EFFECT: Save to global store *only when debounced value changes*
     // useEffect(() => {
@@ -90,6 +114,8 @@ function EditableTitle({ value, onChange, disabled = false }: EditableProps) {
                 <input
                     ref={inputRef}
                     type="text"
+                    // --- FIX FOR "NOT TYPING" BUG ---
+                    // The input's value MUST be bound to the local `currentValue`
                     value={currentValue}
                     onChange={((e) => setCurrentValue(e.target.value))}
                     placeholder="What are you focusing on?"
