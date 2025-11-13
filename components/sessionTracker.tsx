@@ -12,6 +12,7 @@ import PersistentTimer, { TimerHandle } from '@/lib/PersistentTimer';
 import { useShallow } from 'zustand/react/shallow';
 import { auth, db } from '@/lib/firebase';
 import { useCreateSession } from '@/hooks/useCreateSession'; // <-- This saves the FINAL log
+import useDebounce from '@/hooks/useDebounce';
 import { DEFAULT_SESSION_TYPES } from '@/config/sessionTypes.config';
 import type { Session, SessionFormProps } from '@/types';
 import { formatTimerDuration as formatTime } from '@/lib/timeUtils';
@@ -23,6 +24,7 @@ function EditableTitle({ value, onChange, disabled = false }: EditableProps) {
     const [isEditing, setIsEditing] = useState(false);
     const [currentValue, setCurrentValue] = useState(value);
     const inputRef = useRef<HTMLInputElement>(null);
+    // const debouncedValue = useDebounce(currentValue, 500); // 500ms delay
 
     // Sync local state with prop value if it changes externally
     useEffect(() => {
@@ -287,7 +289,6 @@ export default function SessionTracker() {
                                         // disabled={status === 'paused'} // optional: lock editing during breaks
                                         disabled={isLoading} // Disable while saving
                                     />
-
                                 </div>
 
                                 {/* <div className="space-y-2">
