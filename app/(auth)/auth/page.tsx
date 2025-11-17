@@ -1,8 +1,8 @@
-'use client';
-import { Auth } from "../_components/Auth";
+'use client";'
+import { Auth } from "@/components/Auth";
 import { login, signup, loginWithGoogle, loginWithGithub } from "../_lib/authHandlers";
 
-export default function SignupPage() {
+export default function AuthPage() {
   return (
     <Auth
       onLogin={login}
@@ -11,7 +11,6 @@ export default function SignupPage() {
       onGitHubSignIn={loginWithGithub}
       isLoading={false}
       isProviderLoading={false}
-      defaultTab="signup" // 👈 force signup tab
     />
   );
 }

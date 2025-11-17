@@ -1,11 +1,11 @@
-'use client';
+'use client'
 import React, { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
-import { Button } from './ui/button';
-import { Input } from './ui/input';
-import { Label } from './ui/label';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
-import { Alert, AlertDescription } from './ui/alert';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import {
   User,
   Mail,
@@ -17,6 +17,7 @@ import {
   Chrome, // Google Icon
   Github  // GitHub Icon
 } from 'lucide-react';
+import Link from 'next/link';
 
 // Props to receive all logic from page.tsx
 interface AuthProps {
@@ -26,6 +27,7 @@ interface AuthProps {
   onGitHubSignIn: () => Promise<{ success: boolean; error?: string }>;
   isLoading: boolean; // For email/pass
   isProviderLoading: boolean; // For Google/GitHub
+  defaultTab?: 'login' | 'signup'; // 👈 new prop
 }
 
 export function Auth({
@@ -34,9 +36,10 @@ export function Auth({
   onGoogleSignIn,
   onGitHubSignIn,
   isLoading,
-  isProviderLoading
+  isProviderLoading,
+  defaultTab = 'login', // 👈 default to login
 }: AuthProps) {
-  const [activeTab, setActiveTab] = useState<'login' | 'signup'>('login');
+  const [activeTab, setActiveTab] = useState<'login' | 'signup'>(defaultTab);
   const [showPassword, setShowPassword] = useState(false);
   const [formData, setFormData] = useState({
     email: '',
@@ -62,7 +65,7 @@ export function Auth({
       setError(message || 'An unexpected error occurred');
     }
   };
- 
+
   // Handler for Email/Password
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -345,13 +348,20 @@ export function Auth({
           <div className="mt-6 text-center text-sm text-muted-foreground">
             <p>
               {activeTab === 'login' ? "Don't have an account? " : "Already have an account? "}
-              <button
+              {/* <button
                 onClick={() => handleTabChange(activeTab === 'login' ? 'signup' : 'login')}
                 className="text-primary hover:underline"
                 disabled={anyLoading}
               >
                 {activeTab === 'login' ? 'Sign up' : 'Sign in'}
-              </button>
+              </button> */}
+              {/* Prefetched when the link is hovered or enters the viewport */}
+              <Link
+                href={activeTab === 'login' ? "/signup" : "/login"}
+                className="text-primary hover:underline"
+              >
+                {activeTab === 'login' ? 'Sign up' : 'Sign in'}
+              </Link>
             </p>
           </div>
         </CardContent>

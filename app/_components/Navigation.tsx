@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Clock, Menu, X } from 'lucide-react';
+import Link from 'next/link';
 
 export function Navigation() {
   const [isOpen, setIsOpen] = useState(false);
@@ -49,7 +50,9 @@ export function Navigation() {
               Get Started
             </button>
             <button className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-6 rounded-lg transition-colors">
-              Try Now
+              <Link href="/login" className="inline-flex items-center gap-2">
+                Try Now
+              </Link>
             </button>
           </div>
 

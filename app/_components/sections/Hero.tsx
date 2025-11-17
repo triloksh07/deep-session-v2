@@ -1,4 +1,5 @@
 import { ArrowRight, Play } from 'lucide-react';
+import Link from 'next/link';
 
 export function Hero() {
   return (
@@ -23,8 +24,10 @@ export function Hero() {
 
             <div className="flex flex-col sm:flex-row gap-4 pt-4">
               <button className="inline-flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-8 rounded-lg transition-all duration-200 shadow-lg hover:shadow-xl">
-                <Play size={20} />
-                Get Started Free
+                <Link href="/auth" className="inline-flex items-center gap-2">
+                  <Play size={20} />
+                  Get Started Free
+                </Link>
               </button>
               <button className="inline-flex items-center justify-center gap-2 bg-slate-700 hover:bg-slate-600 text-white font-semibold py-3 px-8 rounded-lg transition-all duration-200 border border-slate-600">
                 Learn More

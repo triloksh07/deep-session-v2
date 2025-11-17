@@ -11,4 +11,4 @@ if (!admin.apps.length) {
   });
 }
 
-export const auth = admin.auth();
+export const authAdmin = admin.auth();

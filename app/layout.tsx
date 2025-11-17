@@ -4,7 +4,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import Providers from "@/components/providers";
 import { ThemeProvider } from "@/components/theme-provider"
-import AuthProvider from "@/components/AuthProvider";
+import AuthProvider from "@/components/AuthProviderNew";
 import InstallPWAButton from '@/components/InstallPWAButton';
 import { Toaster } from "@/components/ui/sonner";
 import { NetworkStatusHandler } from '@/components/NetworkStatusHandler';
