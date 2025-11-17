@@ -1,7 +1,5 @@
-// Create a new file: src/components/AuthProvider.js
-
+// @/components/AuthProvider.js
 'use client';
-
 import { useState, useEffect } from 'react';
 import { onAuthStateChanged } from 'firebase/auth';
 import { auth } from '@/lib/firebase';

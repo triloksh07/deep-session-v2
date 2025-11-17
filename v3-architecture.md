@@ -1,6 +1,6 @@
 ## DeepSession - v3 architecture
 
-```bash
+```sh
 app/
 ├── (auth)/             <-- For login/signup pages
 │   ├── login/

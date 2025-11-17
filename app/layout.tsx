@@ -24,7 +24,6 @@ export const metadata: Metadata = {
   title: "DeepSession - AI-Powered Focus Coach",
   description: "Boost your productivity with AI-driven focus sessions, personalized insights, and seamless task management.",
   manifest: "/manifest.json",
-  // themeColor: "#4F46E5",
   appleWebApp: {
     capable: true,
     title: "DeepSession",
@@ -34,7 +33,11 @@ export const metadata: Metadata = {
 
 // IMPROVEMENT: Add viewport settings for theme-color and responsive design
 export const viewport: Viewport = {
-  themeColor: "#4F46E5",
+  themeColor: "#0f172a", // Matches bg-slate-900
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
 };
 
 export default function RootLayout({
@@ -47,21 +50,23 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <ThemeProvider 
+        <ThemeProvider
           attribute="class"
           defaultTheme="system"
           enableSystem
           disableTransitionOnChange
         >
           <Providers>
-            {children}
-            <Toaster />
-            <div className="fixed bottom-4 right-4 z-50">
-              <InstallPWAButton />
-            </div>
-            {/* It will run the hook on the client-side */}
-            <NetworkStatusHandler />
-            <Analytics />
+            <AuthProvider>
+              {children}
+              <Toaster />
+              <div className="fixed bottom-4 right-4 z-50">
+                <InstallPWAButton />
+              </div>
+              {/* It will run the hook on the client-side */}
+              <NetworkStatusHandler />
+              <Analytics />
+            </AuthProvider>
           </Providers>
         </ ThemeProvider>
       </body>

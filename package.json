@@ -7,7 +7,7 @@
     "build": "next build --turbopack",
     "start": "next start",
     "lint": "eslint",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "turbo run -T typecheck || tsc --noEmit",
     "reset": "rm -rf .next node_modules && pnpm install"
   },
   "dependencies": {

@@ -1,9 +1,10 @@
+'use client';
 import React, { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
-import { Button } from './ui/button';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
-import { Badge } from './ui/badge';
-import { Checkbox } from './ui/checkbox';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Badge } from '@/components/ui/badge';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
   Download,
   FileText,
@@ -29,7 +30,7 @@ interface ExportOptions {
   sessionTypes: string[];
 }
 
-export function ExportData({ sessions, goals, onExport }: ExportDataProps) {
+export default function ExportData({ sessions, goals, onExport }: ExportDataProps) {
   const [isExporting, setIsExporting] = useState(false);
   const [format, setFormat] = useState<'json' | 'csv'>('json');
   const [options, setOptions] = useState<ExportOptions>({
@@ -336,7 +337,7 @@ export function ExportData({ sessions, goals, onExport }: ExportDataProps) {
                   }
                 </div>
                 <div>
-                  Filename: focusflow-export-{new Date().toISOString().split('T')[0]}.{format}
+                  Filename: deepsession-export-{new Date().toISOString().split('T')[0]}.{format}
                 </div>
               </div>
             </div>
