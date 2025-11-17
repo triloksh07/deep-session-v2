@@ -18,25 +18,29 @@ import {
   Github  // GitHub Icon
 } from 'lucide-react';
 import Link from 'next/link';
+import {
+  onAuthStateChanged,
+  signInWithEmailAndPassword,
+  createUserWithEmailAndPassword,
+  signOut,
+  updateProfile,
+  User as FirebaseUser, // Rename to avoid conflict
+  signInWithPopup,
+  GoogleAuthProvider,
+  GithubAuthProvider,
+} from 'firebase/auth';
+import { doc, setDoc } from 'firebase/firestore';
+import { db, auth } from '@/lib/firebase';
 
-// Props to receive all logic from page.tsx
 interface AuthProps {
-  onLogin: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
-  onSignup: (email: string, password: string, name: string) => Promise<{ success: boolean; error?: string }>;
-  onGoogleSignIn: () => Promise<{ success: boolean; error?: string }>;
-  onGitHubSignIn: () => Promise<{ success: boolean; error?: string }>;
-  isLoading: boolean; // For email/pass
-  isProviderLoading: boolean; // For Google/GitHub
-  defaultTab?: 'login' | 'signup'; // 👈 new prop
+  defaultTab?: 'login' | 'signup';
 }
 
+// --- CREATE THE PROVIDER INSTANCES ---
+const googleProvider = new GoogleAuthProvider();
+const githubProvider = new GithubAuthProvider();
+
 export function Auth({
-  onLogin,
-  onSignup,
-  onGoogleSignIn,
-  onGitHubSignIn,
-  isLoading,
-  isProviderLoading,
   defaultTab = 'login', // 👈 default to login
 }: AuthProps) {
   const [activeTab, setActiveTab] = useState<'login' | 'signup'>(defaultTab);
@@ -48,22 +52,83 @@ export function Auth({
     confirmPassword: ''
   });
   const [error, setError] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [isProviderLoading, setIsProviderLoading] = useState(false); // For Google/GitHub auth
+
+  // --- Auth Handlers ---
+  const handleLogin = async (email: string, password: string) => {
+    setIsLoading(true);
+    try {
+      await signInWithEmailAndPassword(auth, email, password);
+      // onAuthStateChanged will handle the user state update
+      setIsLoading(false);
+      return { success: true };
+    } catch (error: unknown) {
+      setIsLoading(false);
+      const message = error instanceof Error ? error.message : 'Unknown error';
+      return { success: false, error: message };
+    }
+  };
+
+  const handleSignup = async (email: string, password: string, name: string) => {
+    setIsLoading(true);
+    try {
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      const loggedInUser = userCredential.user;
+
+      // Update the user's profile
+      await updateProfile(loggedInUser, { displayName: name });
+
+      // (good practice) Save user to 'users' collection
+      const userRef = doc(db, "users", loggedInUser.uid);
+      await setDoc(userRef, {
+        uid: loggedInUser.uid,
+        email: loggedInUser.email,
+        displayName: name,
+      }, { merge: true });
+
+      // onAuthStateChanged will handle the user state
+      setIsLoading(false);
+      return { success: true };
+    } catch (error: unknown) {
+      setIsLoading(false);
+      const message = error instanceof Error ? error.message : 'Unknown error';
+      return { success: false, error: message };
+    }
+  };
 
   // Handler for Google/GitHub
-  const handleProviderSignIn = async (provider: 'google' | 'github') => {
-    setError('');
-    try {
-      const result = provider === 'google'
-        ? await onGoogleSignIn()
-        : await onGitHubSignIn();
+  const updateUserProfile = async (user: FirebaseUser) => {
+    const userRef = doc(db, "users", user.uid);
+    await setDoc(userRef, {
+      uid: user.uid,
+      email: user.email,
+      displayName: user.displayName,
+      photoURL: user.photoURL,
+    }, { merge: true });
+  };
 
-      if (!result.success) {
-        setError(result.error || 'An error occurred');
-      }
+  const handleProviderSignIn = async (provider: 'google' | 'github') => {
+    setIsProviderLoading(true);
+    const authProvider = provider === 'google' ? googleProvider : githubProvider;
+
+    try {
+      const result = await signInWithPopup(auth, authProvider);
+      await updateUserProfile(result.user);
+      setIsProviderLoading(false);
+      return { success: true };
     } catch (error: unknown) {
+      // ... (error handling)
+      setIsProviderLoading(false);
       const message = error instanceof Error ? error.message : 'Unknown error';
-      setError(message || 'An unexpected error occurred');
+      return { success: false, error: message };
     }
+  };
+
+  const handleGoogleSignIn = () => handleProviderSignIn('google');
+  const handleGitHubSignIn = () => handleProviderSignIn('github');
+  const handleLogout = async () => {
+    await signOut(auth); // No need to refresh, onAuthStateChanged will set user to null
   };
 
   // Handler for Email/Password
@@ -94,9 +159,9 @@ export function Auth({
     try {
       let result;
       if (activeTab === 'login') {
-        result = await onLogin(formData.email, formData.password);
+        result = await handleLogin(formData.email, formData.password);
       } else {
-        result = await onSignup(formData.email, formData.password, formData.name);
+        result = await handleSignup(formData.email, formData.password, formData.name);
       }
       if (!result.success) {
         setError(result.error || 'An error occurred');
@@ -141,7 +206,7 @@ export function Auth({
             <Button
               variant="outline"
               className="w-full"
-              onClick={() => handleProviderSignIn('google')}
+              onClick={() => handleGoogleSignIn()}
               disabled={anyLoading}
             >
               {isProviderLoading ? (
@@ -154,7 +219,7 @@ export function Auth({
             <Button
               variant="outline"
               className="w-full"
-              onClick={() => handleProviderSignIn('github')}
+              onClick={() => handleGitHubSignIn()}
               disabled={anyLoading}
             >
               {isProviderLoading ? (
@@ -178,7 +243,7 @@ export function Auth({
             </div>
           </div>
 
-          {/* --- Email/Pass Tabs (Your "Old" Code) --- */}
+          {/* --- Email/Pass Tabs --- */}
           <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-4">
             <TabsList className="grid w-full grid-cols-2">
               <TabsTrigger value="login" disabled={anyLoading}>Sign In</TabsTrigger>
