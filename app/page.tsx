@@ -104,24 +104,24 @@ export default function App() {
 
 
   // --- 5. ADD THIS PRE-FETCHING HOOK ---
-  useEffect(() => {
-    // Run this only when the user object is available
-    if (user?.uid) {
-      console.log("User logged in. Pre-fetching data for offline use...");
+  // useEffect(() => {
+  //   // Run this only when the user object is available
+  //   if (user?.uid) {
+  //     console.log("User logged in. Pre-fetching data for offline use...");
 
-      // Pre-fetch sessions to prime the cache
-      queryClient.prefetchQuery({
-        queryKey: ['sessions', user.uid],
-        queryFn: () => fetchSessions(user.uid),
-      });
+  //     // Pre-fetch sessions to prime the cache
+  //     queryClient.prefetchQuery({
+  //       queryKey: ['sessions', user.uid],
+  //       queryFn: () => fetchSessions(user.uid),
+  //     });
 
-      // Pre-fetch goals to prime the cache
-      queryClient.prefetchQuery({
-        queryKey: ['goals', user.uid],
-        queryFn: () => fetchGoals(user.uid),
-      });
-    }
-  }, [user, queryClient]); // Runs once when 'user' becomes available
+  //     // Pre-fetch goals to prime the cache
+  //     queryClient.prefetchQuery({
+  //       queryKey: ['goals', user.uid],
+  //       queryFn: () => fetchGoals(user.uid),
+  //     });
+  //   }
+  // }, [user, queryClient]); // Runs once when 'user' becomes available
 
   // NEW: Modern way to handle auth state changes with Firebase
   // --- Auth Listener ---

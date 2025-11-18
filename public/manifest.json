@@ -1,6 +1,6 @@
 {
-  "name": "DeepSession",
-  "short_name": "DeepSession",
+  "name": "DeepSession-v2",
+  "short_name": "DeepSession-v2",
   "description": "Your personal focus coach and session tracker.",
   "start_url": "/",
   "display": "standalone",

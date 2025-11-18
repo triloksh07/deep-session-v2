@@ -21,20 +21,19 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "DeepSession - AI-Powered Focus Coach",
+  title: "DeepSession v2 - AI-Powered Focus Coach",
   description: "Boost your productivity with AI-driven focus sessions, personalized insights, and seamless task management.",
   manifest: "/manifest.json",
-  // themeColor: "#4F46E5",
   appleWebApp: {
     capable: true,
-    title: "DeepSession",
+    title: "DeepSession-v2",
     statusBarStyle: "default",
   },
 };
 
 // IMPROVEMENT: Add viewport settings for theme-color and responsive design
 export const viewport: Viewport = {
-  themeColor: "#4F46E5",
+  themeColor: "#0f172a", 
 };
 
 export default function RootLayout({
@@ -44,6 +43,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
+       <head>
+        <link rel="webmanifest" href="/manifest.json" />
+        <meta name="theme-color" content="#0f172a" />
+      </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
