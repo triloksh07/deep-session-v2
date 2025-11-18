@@ -1,8 +1,13 @@
 // app/dashboard/DashboardContent.tsx
 "use client";
 import React from "react";
-import DashboardTabs from "./DashboardTabs";
+import { useDashboard } from "./DashboardProvider";
+import ConnectedDataRenderer from "@/components/ConnectedDataRenderer";
+import { Dashboard } from "@/components/Dashboard";
 
 export default function DashboardContent() {
-  return <DashboardTabs />;
+  const { sessions, goals, isLoading, isError } = useDashboard();
+  return (
+    <Dashboard sessions={sessions!} />
+  )
 }
