@@ -49,11 +49,11 @@ export function Navigation() {
             >
               Get Started
             </button>
-            <button className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-6 rounded-lg transition-colors">
-              <Link href="/login" className="inline-flex items-center gap-2">
+            <Link href="/login" className="inline-flex items-center gap-2">
+              <button className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-6 rounded-lg transition-colors">
                 Try Now
-              </Link>
-            </button>
+              </button>
+            </Link>
           </div>
 
           <button

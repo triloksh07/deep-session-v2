@@ -1,8 +1,7 @@
 // middleware.ts
-// Lightweight checks only: read cookies, redirect if missing.
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
-// import { authAdmin } from '@/lib/firebase-admin';
+import { authAdmin } from '@/lib/firebase-admin';
 
 export async function middleware(req: NextRequest) {
     const sessionCookie = req.cookies.get("session")?.value;
@@ -19,20 +18,19 @@ export async function middleware(req: NextRequest) {
         pathname.startsWith("/settings") ||
         pathname.startsWith("/profile");
 
-    // const isAuthPage =
-    //     pathname.startsWith("/login") ||
-    //     pathname.startsWith("/signup") ||
-    //     pathname.startsWith("/verify-email") ||
-    //     pathname.startsWith("/auth");
+    const isAuthPage =
+        pathname.startsWith("/login") ||
+        pathname.startsWith("/signup") ||
+        pathname.startsWith("/verify-email") ||
+        pathname.startsWith("/auth");
 
-    // if (!sessionCookie && isAuthedRoute) {
-    //     return NextResponse.redirect(new URL("/login", req.url));
-    // }
-
-    // If cookie exists, let request continue — verification happens later in Node.js
-    return NextResponse.next();
-
-    {/**
+    // Case 1: No cookie → block protected routes, allow public
+    if (!sessionCookie) {
+        if (isAuthedRoute) {
+            return NextResponse.redirect(new URL("/login", req.url));
+        }
+        return NextResponse.next();
+    }
     // Case 2: Cookie exists → verify for protected routes
     try {
         const decoded = await authAdmin.verifySessionCookie(sessionCookie, true);
@@ -57,7 +55,6 @@ export async function middleware(req: NextRequest) {
         // ❌ Invalid/expired cookie → clear session and redirect to login
         return NextResponse.redirect(new URL("/login", req.url));
     }
-     */}
 }
 
 // Apply middleware only to protected routes
@@ -76,3 +73,6 @@ export const config = {
         "/profile/:path*",
     ],
 };
+
+
+// Lightweight checks only: read cookies, redirect if missing.

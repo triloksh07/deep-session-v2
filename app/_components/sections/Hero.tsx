@@ -23,12 +23,12 @@ export function Hero() {
             </div>
 
             <div className="flex flex-col sm:flex-row gap-4 pt-4">
-              <button className="inline-flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-8 rounded-lg transition-all duration-200 shadow-lg hover:shadow-xl">
-                <Link href="/auth" className="inline-flex items-center gap-2">
+              <Link href="/login" className="inline-flex items-center gap-2">
+                <button className="inline-flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-8 rounded-lg transition-all duration-200 shadow-lg hover:shadow-xl hover:cursor-pointer">
                   <Play size={20} />
                   Get Started Free
-                </Link>
-              </button>
+                </button>
+              </Link>
               <button className="inline-flex items-center justify-center gap-2 bg-slate-700 hover:bg-slate-600 text-white font-semibold py-3 px-8 rounded-lg transition-all duration-200 border border-slate-600">
                 Learn More
                 <ArrowRight size={20} />

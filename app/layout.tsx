@@ -9,6 +9,7 @@ import InstallPWAButton from '@/components/InstallPWAButton';
 import { Toaster } from "@/components/ui/sonner";
 import { NetworkStatusHandler } from '@/components/NetworkStatusHandler';
 import { Analytics } from '@vercel/analytics/next';
+import ServiceWorkerRegister from '@/components/serviceWorker'
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -21,12 +22,12 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "DeepSession - AI-Powered Focus Coach",
+  title: "v3 Testing - DeepSession",
   description: "Boost your productivity with AI-driven focus sessions, personalized insights, and seamless task management.",
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
-    title: "DeepSession",
+    title: "DeepSession-v3",
     statusBarStyle: "default",
   },
 };
@@ -65,6 +66,7 @@ export default function RootLayout({
               </div>
               {/* It will run the hook on the client-side */}
               <NetworkStatusHandler />
+              <ServiceWorkerRegister />
               <Analytics />
             </AuthProvider>
           </Providers>

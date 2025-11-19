@@ -3,13 +3,15 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev --turbopack",
-    "build": "next build --turbopack",
+    "dev": "next dev",
+    "build": "next build",
     "start": "next start",
+    "run-build":"next build && next start",
     "lint": "eslint",
     "typecheck": "turbo run -T typecheck || tsc --noEmit",
     "reset": "rm -rf .next node_modules && pnpm install",
     "clear": "cache clean --force",
+    "inspect": "NODE_OPTIONS='--inspect' pnpm dev",
     "clean": "turbo prune --scope=deepsession-v3 --docker && docker build -t deepsession-v3 -f ./pruned/Dockerfile ./pruned"
   },
   "dependencies": {
@@ -52,7 +54,6 @@
     "embla-carousel-react": "^8.6.0",
     "express": "^5.1.0",
     "firebase": "^12.1.0",
-    "firebase-admin": "^13.6.0",
     "import-in-the-middle": "^2.0.0",
     "input-otp": "^1.4.2",
     "lucide-react": "^0.552.0",
