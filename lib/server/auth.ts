@@ -1,6 +1,6 @@
 // lib/server/auth.ts
 import { cookies } from "next/headers";
-import { authAdmin } from "@/lib/firebase-admin";
+// import { authAdmin } from "@/lib/firebase-admin";
 
 export async function verifySessionCookie() {
     const session = (await cookies()).get("session")?.value;

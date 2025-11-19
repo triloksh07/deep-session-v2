@@ -16,13 +16,13 @@ export default function DashboardPage() {
   //     }
   // }, [user, router]);
 
-  if (!user) {
-    redirect("/login"); // ✅ runs before render
-  }
+  // if (!user) {
+  //   redirect("/login"); // ✅ runs before render
+  // }
 
-  if (!user) {
-    return null; // render nothing until redirect happens
-  }
+  // if (!user) {
+  //   return null; // render nothing until redirect happens
+  // }
 
   // --- RENDER LOGIC ---
   if (loading) {
@@ -37,9 +37,9 @@ export default function DashboardPage() {
   }
 
   return (
-    <DashboardProvider userId={user.uid}>
+    // <DashboardProvider userId={user.uid}>
+    // {/* </DashboardProvider> */}
       <DashboardShell />
-    </DashboardProvider>
   )
 }
 

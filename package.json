@@ -8,7 +8,7 @@
     "start": "next start",
     "run-build":"next build && next start",
     "lint": "eslint",
-    "typecheck": "turbo run -T typecheck || tsc --noEmit",
+    "typecheck": "pnpm exec tsc --noEmit",
     "reset": "rm -rf .next node_modules && pnpm install",
     "clear": "cache clean --force",
     "inspect": "NODE_OPTIONS='--inspect' pnpm dev",

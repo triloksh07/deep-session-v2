@@ -6,7 +6,7 @@ import { User as FirebaseUser } from "firebase/auth";
 import { useAuth } from "@/context/AuthProvider";
 import DashboardProvider from "./DashboardProvider";
 import DashboardContent from "./DashboardContent";
-import { Auth } from "@/components/Auth";
+// import { Auth } from "@/components/Auth";
 import { useRouter, redirect } from 'next/navigation';
 import ConnectedDataRenderer from '@/components/ConnectedDataRenderer';
 import { useDashboard } from "../_components/DashboardProvider";
@@ -14,7 +14,7 @@ import { useDashboard } from "../_components/DashboardProvider";
 export default function DashboardShell() {
     const { user, loading } = useAuth();
     // const [user, setUser] = useState<FirebaseUser | null>(null);
-  const { isLoading, isError, error } = useDashboard();
+    const { isLoading, isError, error } = useDashboard();
     const router = useRouter();
 
     // show spinner
@@ -26,13 +26,13 @@ export default function DashboardShell() {
     //     }
     // }, [user, router]);
 
-    if (!user) {
-        redirect("/login"); // ✅ runs before render
-    }
+    // if (!user) {
+    //     redirect("/login"); // ✅ runs before render
+    // }
 
-    if (!user) {
-        return null; // render nothing until redirect happens
-    }
+    // if (!user) {
+    //     return null; // render nothing until redirect happens
+    // }
 
     return (
         <ConnectedDataRenderer isLoading={isLoading} isError={isError} error={error}>
