@@ -1,14 +1,15 @@
 // app/api/session/set/route.ts
 import { NextResponse } from "next/server";
-import { authAdmin } from "@/lib/firebaseAdmin"; // Firebase Admin SDK
+import { authAdmin } from "@/lib/firebase-admin"; // Firebase Admin SDK
 
 export async function POST(req: Request) {
-  const { idToken } = await req.json();
-
   try {
+    const { idToken } = await req.json();
+    if (!idToken) {
+      return NextResponse.json({ error: "Missing idToken" }, { status: 400 });
+    }
     // Verify Firebase ID token
-    const decodedToken = await authAdmin.verifyIdToken(idToken);
-
+    const decodedToken = await authAdmin.verifyIdToken(idToken, true);
     // Create a session cookie (expires in 5 days)
     const expiresIn = 60 * 60 * 24 * 5 * 1000;
     const sessionCookie = await authAdmin.createSessionCookie(idToken, { expiresIn });
@@ -18,12 +19,17 @@ export async function POST(req: Request) {
       httpOnly: true,
       secure: true,
       sameSite: "strict",
-      maxAge: expiresIn / 1000,
+      // path: "/",
+      maxAge: Math.floor(expiresIn / 1000),
     });
 
     return res;
 
-  } catch {
-    return NextResponse.json({ status: 'Unauthorized', error: "Invalid token" }, { status: 401 });
+  } catch (e: any) {
+    return NextResponse.json({
+      status: '401',
+      message: 'Unauthorized',
+      error: e.message || "Invalid token"
+    }, { status: 401 });
   }
 }

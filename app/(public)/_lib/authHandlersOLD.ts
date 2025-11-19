@@ -1,5 +1,15 @@
 import { auth } from "@/lib/firebase";
-import { signInWithEmailAndPassword, createUserWithEmailAndPassword, updateProfile, GoogleAuthProvider, GithubAuthProvider, signInWithPopup } from "firebase/auth";
+import {
+  onAuthStateChanged,
+  signInWithEmailAndPassword,
+  createUserWithEmailAndPassword,
+  signOut,
+  updateProfile,
+  User as FirebaseUser, // Rename to avoid conflict
+  signInWithPopup,
+  GoogleAuthProvider,
+  GithubAuthProvider,
+} from 'firebase/auth';
 
 async function setSessionCookie(idToken: string) {
   await fetch("/api/session/set", {

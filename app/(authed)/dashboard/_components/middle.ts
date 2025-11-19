@@ -1,7 +1,7 @@
 // middleware.ts
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
-import { auth } from "@/lib/firebaseAdmin";
+// import { auth } from "@/lib/firebaseAdmin";
 
 export async function middleware(req: NextRequest) {
   const sessionCookie = req.cookies.get("session")?.value;

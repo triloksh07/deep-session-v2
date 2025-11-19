@@ -1,4 +1,4 @@
-// src/lib/firebase.js
+// lib/firebase.ts
 
 import { initializeApp, getApps, getApp } from "firebase/app";
 // NEW: Import the new functions for Firestore initialization
@@ -40,5 +40,5 @@ const db = initializeFirestore(app, {
 
 
 // Export the services you'll need
-export { db, auth, app };
+export { db, auth };
 

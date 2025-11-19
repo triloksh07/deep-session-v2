@@ -1,14 +1,14 @@
 'use client'
 import React, { useRef, useEffect, useState, useCallback } from 'react';
-import { Button } from './ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
-import { Input } from './ui/input';
-import { Label } from './ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
-import { Textarea } from './ui/textarea';
+import { Button } from '../../../../components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '../../../../components/ui/card';
+import { Input } from '../../../../components/ui/input';
+import { Label } from '../../../../components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../../../components/ui/select';
+import { Textarea } from '../../../../components/ui/textarea';
 import { Square, Coffee, Loader2 } from 'lucide-react';
 import { useSessionStore } from '@/store/sessionStore';
-import PersistentTimer, { TimerHandle } from '@/lib/PersistentTimer';
+import PersistentTimer, { TimerHandle } from '@/app/(authed)/dashboard/_lib/PersistentTimer';
 import { useShallow } from 'zustand/react/shallow';
 import { auth, db } from '@/lib/firebase';
 import { useCreateSession } from '@/hooks/useCreateSession'; // <-- This saves the FINAL log

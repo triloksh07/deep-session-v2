@@ -8,14 +8,17 @@ import DashboardProvider from "./DashboardProvider";
 import DashboardContent from "./DashboardContent";
 import { Auth } from "@/components/Auth";
 import { useRouter, redirect } from 'next/navigation';
+import ConnectedDataRenderer from '@/components/ConnectedDataRenderer';
+import { useDashboard } from "../_components/DashboardProvider";
 
 export default function DashboardShell() {
     const { user, loading } = useAuth();
     // const [user, setUser] = useState<FirebaseUser | null>(null);
+  const { isLoading, isError, error } = useDashboard();
     const router = useRouter();
 
     // show spinner
-    if (loading) return <div>Loading...</div>;
+    // if (loading) return <div>Loading...</div>;
 
     // useEffect(() => {
     //     if (!user) {
@@ -32,8 +35,9 @@ export default function DashboardShell() {
     }
 
     return (
-        <DashboardProvider userId={user.uid}>
+        <ConnectedDataRenderer isLoading={isLoading} isError={isError} error={error}>
             <DashboardContent />
-        </DashboardProvider>
+        </ConnectedDataRenderer>
+
     );
 }

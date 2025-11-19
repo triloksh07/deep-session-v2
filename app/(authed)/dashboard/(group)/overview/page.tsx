@@ -1,7 +1,7 @@
 import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle, CardDesignElement } from './ui/card';
-import { Button } from './ui/button';
-import { Badge } from './ui/badge';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { Play, Clock, Target, TrendingUp } from 'lucide-react';
 import { Session } from '@/types'; // <-- 1. IMPORT THE TYPE
 import { calculateDuration } from '@/lib/timeUtils';

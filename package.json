@@ -8,7 +8,9 @@
     "start": "next start",
     "lint": "eslint",
     "typecheck": "turbo run -T typecheck || tsc --noEmit",
-    "reset": "rm -rf .next node_modules && pnpm install"
+    "reset": "rm -rf .next node_modules && pnpm install",
+    "clear": "cache clean --force",
+    "clean": "turbo prune --scope=deepsession-v3 --docker && docker build -t deepsession-v3 -f ./pruned/Dockerfile ./pruned"
   },
   "dependencies": {
     "@ducanh2912/next-pwa": "^10.2.9",

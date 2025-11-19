@@ -5,12 +5,12 @@ import { Loader2 } from "lucide-react";
 const ConnectedDataRenderer = ({
     isLoading,
     isError,
-    error, // <-- 4. RECEIVE THE ERROR PROP
+    error, 
     children,
 }: {
     isLoading: boolean;
     isError: boolean;
-    error: Error | null; // <-- 5. ADD THE TYPE
+    error: Error | null; 
     children: React.ReactNode;
 }) => {
     if (isLoading) {
