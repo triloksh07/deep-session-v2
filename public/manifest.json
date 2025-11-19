@@ -1,11 +1,11 @@
 {
   "name": "DeepSession-v2",
-  "short_name": "DeepSession-v2",
+  "short_name": "DeepSession",
   "description": "Your personal focus coach and session tracker.",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#121212",
-  "theme_color": "#4F46E5",
+  "theme_color": "#0f172a",
   "icons": [
     {
       "src": "/icon-192x192.png",

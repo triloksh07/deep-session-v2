@@ -4,8 +4,8 @@ import pwa from '@ducanh2912/next-pwa';
 // Initialize the PWA functionality with your desired settings
 const withPWA = pwa({
   dest: 'public',
-  disable: false,
-  // disable: process.env.NODE_ENV === 'development',
+  register: true,
+  disable: process.env.NODE_ENV === 'development',
   // You can add more PWA options here
 });
 
@@ -33,4 +33,5 @@ const nextConfig: NextConfig = {
 
 };
 
-export default nextConfig;
+// Export the final configuration, wrapped in the PWA function
+export default withPWA(nextConfig);

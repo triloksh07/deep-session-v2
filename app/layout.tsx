@@ -9,6 +9,7 @@ import InstallPWAButton from '@/components/InstallPWAButton';
 import { Toaster } from "@/components/ui/sonner";
 import { NetworkStatusHandler } from '@/components/NetworkStatusHandler';
 import { Analytics } from '@vercel/analytics/next';
+import ServiceWorkerRegister from '@/components/serviceWorker'
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -33,7 +34,7 @@ export const metadata: Metadata = {
 
 // IMPROVEMENT: Add viewport settings for theme-color and responsive design
 export const viewport: Viewport = {
-  themeColor: "#0f172a", 
+  themeColor: "#0f172a",
 };
 
 export default function RootLayout({
@@ -43,14 +44,14 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-       <head>
+      <head>
         <link rel="webmanifest" href="/manifest.json" />
         <meta name="theme-color" content="#0f172a" />
       </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <ThemeProvider 
+        <ThemeProvider
           attribute="class"
           defaultTheme="system"
           enableSystem
@@ -64,6 +65,7 @@ export default function RootLayout({
             </div>
             {/* It will run the hook on the client-side */}
             <NetworkStatusHandler />
+            <ServiceWorkerRegister />
             <Analytics />
           </Providers>
         </ ThemeProvider>

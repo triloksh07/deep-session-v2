@@ -83,14 +83,15 @@ export default function App() {
   const queryClient = useQueryClient(); // 4. Get the client
   useTabSync();
 
-  // Service worker registration remains the same.
-  useEffect(() => {
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('/sw.js')
-        .then(registration => console.log('Service Worker registered:', registration))
-        .catch(error => console.error('Service Worker registration failed:', error));
-    }
-  }, []);
+  // Service worker registration moved to separate component
+  // if ('serviceWorker' in navigator && process.env.NODE_ENV === "production")
+  // useEffect(() => {
+  //   if ('serviceWorker' in navigator) {
+  //     navigator.serviceWorker.register('/sw.js')
+  //       .then(registration => console.log('Service Worker registered:', registration))
+  //       .catch(error => console.error('Service Worker registration failed:', error));
+  //   }
+  // }, []);
 
   const [user, setUser] = useState<FirebaseUser | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -102,26 +103,25 @@ export default function App() {
   // We must ensure this hook only runs *after* the user is set.
   const [isAuthReady, setIsAuthReady] = useState(false);
 
-
   // --- 5. ADD THIS PRE-FETCHING HOOK ---
-  // useEffect(() => {
-  //   // Run this only when the user object is available
-  //   if (user?.uid) {
-  //     console.log("User logged in. Pre-fetching data for offline use...");
+  useEffect(() => {
+    // Run this only when the user object is available
+    if (user?.uid) {
+      console.log("User logged in. Pre-fetching data for offline use...");
 
-  //     // Pre-fetch sessions to prime the cache
-  //     queryClient.prefetchQuery({
-  //       queryKey: ['sessions', user.uid],
-  //       queryFn: () => fetchSessions(user.uid),
-  //     });
+      // Pre-fetch sessions to prime the cache
+      queryClient.prefetchQuery({
+        queryKey: ['sessions', user.uid],
+        queryFn: () => fetchSessions(user.uid),
+      });
 
-  //     // Pre-fetch goals to prime the cache
-  //     queryClient.prefetchQuery({
-  //       queryKey: ['goals', user.uid],
-  //       queryFn: () => fetchGoals(user.uid),
-  //     });
-  //   }
-  // }, [user, queryClient]); // Runs once when 'user' becomes available
+      // Pre-fetch goals to prime the cache
+      queryClient.prefetchQuery({
+        queryKey: ['goals', user.uid],
+        queryFn: () => fetchGoals(user.uid),
+      });
+    }
+  }, [user, queryClient]); // Runs once when 'user' becomes available
 
   // NEW: Modern way to handle auth state changes with Firebase
   // --- Auth Listener ---
