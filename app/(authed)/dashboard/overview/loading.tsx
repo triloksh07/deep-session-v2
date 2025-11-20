@@ -1,5 +1,5 @@
 import SkeletonWrapper from "../_components/SkeletonWrapper"
-import { DashboardContent } from "./page"
+import DashboardContent from "../_components/DashboardContent";
 
 export default function Loading() {
     return (
