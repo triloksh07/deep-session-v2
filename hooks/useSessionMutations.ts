@@ -1,3 +1,4 @@
+// hooks/useSessionMutations.ts
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import {
     collection,
@@ -13,7 +14,7 @@ import { toast } from 'sonner';
 
 // --- Types ---
 // Data needed to update a session
-type UpdateSessionInput = {
+export type UpdateSessionInput = {
     id: string; // The doc ID
     updates: Partial<Session>; // The fields to change
 };

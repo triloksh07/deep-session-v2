@@ -6,7 +6,8 @@ import { Badge } from '@/components/ui/badge';
 import { Clock, Calendar, FileText, Edit, Trash2 } from 'lucide-react';
 import type { Session } from '@/types';
 import { DEFAULT_SESSION_TYPES } from '@/config/sessionTypes.config';
-import { useUpdateSession, useDeleteSession } from '@/hooks/useSessionMutations';
+// import { useUpdateSession, useDeleteSession } from '@/hooks/useSessionMutations';
+import { useUpdateSession, useDeleteSession } from '@/hooks/new/useSessionMutations';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -29,6 +30,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { useAuth } from '@/context/AuthProvider'
 import { useDashboard } from '../_components/DashboardProvider';
 
 // Helper: build map for session type lookup
@@ -171,9 +173,15 @@ function SessionsContent({ onEdit, onRequestDelete }: { onEdit: (s: Session) => 
 }
 
 export default function SessionLog() {
+  const { userId } = useDashboard();
+  // const {
+  //   sessions,
+  //   updateSession,
+  //   deleteSession,
+  // } = useDashboard();
   // Local UI state and mutations live here (outside Suspense)
-  const { mutate: updateSession, isPending: isUpdating } = useUpdateSession();
-  const { mutate: deleteSession, isPending: isDeleting } = useDeleteSession();
+  const { mutate: updateSession, isPending: isUpdating } = useUpdateSession(userId);
+  const { mutate: deleteSession, isPending: isDeleting } = useDeleteSession(userId);
 
   const [editingSession, setEditingSession] = useState<Session | null>(null);
   const [newTitle, setNewTitle] = useState('');
@@ -187,6 +195,7 @@ export default function SessionLog() {
   const handleSaveEdit = () => {
     if (!editingSession) return;
     if (newTitle.trim() !== '') {
+      // const dataToUpdate = { id: editingSession.id, updates: { title: newTitle } }
       updateSession({ id: editingSession.id, updates: { title: newTitle } });
     }
     setEditingSession(null);

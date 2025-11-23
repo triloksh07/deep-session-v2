@@ -5,15 +5,13 @@ import React, { createContext, useContext } from "react";
 // import { useSessionsQuery } from "@/hooks/new/SessionQuery";
 import { useSessionsQuery } from "@/hooks/new/useSessionsQuery";
 // import { useSessionsQuery } from "@/hooks/useSessionsQuery";
-import type { UpdateSessionInput } from "@/hooks/new/useSessionMutations";
-import { useUpdateSession, useDeleteSession } from "@/hooks/new/useSessionMutations";
+
 import { useGoalsQuery } from "@/hooks/useGoalsQuery";
 import { useCreateGoal, useUpdateGoal, useDeleteGoal } from "@/hooks/useGoalMutations";
 import type { Session, Goal, } from "@/types";
 import { Skeleton as SkeletonBlock } from '@/components/ui/skeleton'
 
 type DashboardContextType = {
-  userId: string,
   sessions: Session[] | undefined;
   goals: Goal[] | undefined;
   isLoading: boolean;
@@ -22,9 +20,6 @@ type DashboardContextType = {
   createGoal: (goal: Omit<Goal, 'id' | 'createdAt' | 'userId'>) => void;
   updateGoal: (id: string, goal: Partial<Goal>) => void;
   deleteGoal: (id: string) => void;
-
-  updateSession: (input: UpdateSessionInput) => void;
-  deleteSession: (id: string) => void;
 };
 
 const DashboardContext = createContext<DashboardContextType | undefined>(
@@ -38,7 +33,7 @@ export default function DashboardProvider({
   children: React.ReactNode;
   userId: string;
 }) {
-
+  
   const {
     data: sessionsData,
     isLoading: loadingSessions,
@@ -56,31 +51,27 @@ export default function DashboardProvider({
   } = useGoalsQuery(userId, true);
 
   // --- GOAL MUTATIONS ---
-  const createGoalMutation = useCreateGoal();
-  const updateGoalMutation = useUpdateGoal();
-  const deleteGoalMutation = useDeleteGoal();
-
-  // --- SESSION MUTATIONS (NEW) ---
-  const updateSessionMutation = useUpdateSession(userId);
-  const deleteSessionMutation = useDeleteSession(userId);
+  const create = useCreateGoal();
+  const update = useUpdateGoal();
+  const del = useDeleteGoal();
 
   const isLoading = loadingSessions || loadingGoals;
   const isError = errSessions || errGoals;
   const error = sessionsError || goalsError; // Get the first error
 
+  // gate for valid array
+  // const sessions = sessionsData!;
+  // const goals = goalsData!;
+
   const value: DashboardContextType = {
-    userId,
     sessions: sessionsData ?? [],
     goals: goalsData ?? [],
     isLoading,
     error,
     isError: Boolean(isError),
-    createGoal: (data) => createGoalMutation.mutate(data),
-    updateGoal: (id: string, updates) => updateGoalMutation.mutate({ id, updates }),
-    deleteGoal: (id: string) => deleteGoalMutation.mutate(id),
-    // ✅ expose session mutations
-    updateSession: (input) => updateSessionMutation.mutate(input),
-    deleteSession: (id) => deleteSessionMutation.mutate(id),
+    createGoal: (data) => create.mutate(data),
+    updateGoal: (id: string, updates) => update.mutate({ id, updates }),
+    deleteGoal: (id: string) => del.mutate(id),
   };
 
   // Prevent rendering children until initial data is available.

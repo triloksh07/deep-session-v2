@@ -32,7 +32,7 @@ const createSessionOnFirebase = async (sessionData: CreateVars): Promise<CreateD
   if (!user) throw new Error('No authenticated user found');
 
   const dataToSave = {
-    id: sessionData.id, // v0 internal id
+    id: sessionData.id, // nanoid
     userId: user.uid,
     title: sessionData.title,
     session_type_id: sessionData.session_type_id,

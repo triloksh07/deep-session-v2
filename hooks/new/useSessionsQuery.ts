@@ -1,3 +1,4 @@
+// hooks/useSessionsQuery.ts
 import { useQuery, useQueryClient, } from '@tanstack/react-query';
 import { collection, query, where, orderBy, getDocs, onSnapshot, Timestamp } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
