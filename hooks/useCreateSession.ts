@@ -36,7 +36,8 @@ const createSessionOnFirebase = async (sessionData: FinalV0DataInput) => {
   if (!user) throw new Error('No authenticated user found');
 
   const dataToSave = {
-    id: user.uid, // The internal v0 id
+    // id: user.uid, 
+    id: sessionData.id,
     userId: user.uid,
     title: sessionData.title,
     session_type_id: sessionData.session_type_id, // <-- v0 field name
