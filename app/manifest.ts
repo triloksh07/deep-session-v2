@@ -5,7 +5,7 @@ export default function manifest(): MetadataRoute.Manifest {
     name: 'DeepSession-v3',
     short_name: 'DeepSession',
     description: 'AI powered focus coach',
-    start_url: '/',
+    start_url: '/dashboard',
     display: 'standalone',
     background_color: '#121212',
     theme_color: '#0f172a',
